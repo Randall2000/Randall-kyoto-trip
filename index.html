@@ -25,6 +25,9 @@
                             blue: 'var(--jp-blue)',
                             border: 'var(--jp-border)'
                         }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
                     }
                 }
             }
@@ -38,6 +41,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Markdown Parser for AI responses -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <!-- 5. Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -81,7 +86,7 @@
 
         body {
             font-family: 'Noto Sans JP', 'Noto Sans TC', sans-serif;
-            background-color: #f3f4f6; /* Light gray background for body */
+            background-color: #f3f4f6;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease;
         }
@@ -102,7 +107,13 @@
         .shadow-float { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
 
         #map-container { width: 100%; z-index: 0; }
-        
+        .ticket-dash {
+            background-image: linear-gradient(to right, var(--jp-border) 50%, rgba(255,255,255,0) 0%);
+            background-position: bottom;
+            background-size: 10px 1px;
+            background-repeat: repeat-x;
+        }
+
         .user-location-marker {
             background-color: #3B82F6;
             border: 2px solid white;
@@ -115,6 +126,11 @@
             70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
             100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
+
+        /* Markdown Styles in Chat */
+        .prose p { margin-bottom: 0.5em; }
+        .prose ul { list-style-type: disc; padding-left: 1.2em; margin-bottom: 0.5em; }
+        .prose strong { font-weight: 700; color: var(--jp-text); }
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex justify-center bg-gray-100 text-jp-text transition-colors duration-300">
@@ -129,8 +145,9 @@
                 <span v-if="!isOnline" class="text-[10px] bg-red-100 text-red-500 px-1 rounded ml-1 font-bold">Offline</span>
                 <span v-if="isSyncing" class="text-[10px] text-jp-accent ml-1 animate-pulse"><i class="fa-solid fa-rotate"></i></span>
             </h1>
-            <button @click="showSettings = true" class="text-jp-gray hover:text-jp-accent transition mb-1">
+            <button @click="showSettings = true" class="text-jp-gray hover:text-jp-accent transition mb-1 relative">
                 <i class="fa-solid fa-sliders text-lg"></i>
+                <span v-if="!geminiApiKey" class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
         </header>
 
@@ -209,9 +226,7 @@
                                     <div class="mt-4 flex items-center justify-center opacity-20"><div class="h-[1px] w-full bg-jp-text"></div><i class="fa-solid fa-plane mx-2 text-xs text-jp-text"></i><div class="h-[1px] w-full bg-jp-text"></div></div>
                                 </div>
                             </transition>
-                            <!-- Boarding Pass Cutout -->
-                            <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
-                            <div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
+                            <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div><div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                         </div>
                         <a href="https://www.westjr.co.jp/global/tc/ticket/pass/haruka/" target="_blank" class="mt-3 block bg-jp-surface border border-jp-blue/30 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition active:scale-98 group">
                             <div class="flex items-center gap-3">
@@ -244,12 +259,9 @@
                                     <p class="text-xs text-jp-gray flex items-center gap-1 cursor-pointer hover:text-jp-blue hover:underline transition-colors w-fit p-1 -ml-1 rounded active:bg-jp-bg/50" v-if="event.location" @click.stop="openGoogleMaps(event.location)">
                                         <i class="fa-solid fa-location-dot text-[10px]"></i> {{ event.location }} <i class="fa-solid fa-arrow-up-right-from-square text-[8px] opacity-60"></i>
                                     </p>
-
-                                    <!-- Note / Link Display -->
                                     <div v-if="event.note" class="mt-1">
-                                        <!-- Subtle Link Style -->
-                                        <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-gray-400/80 hover:text-jp-accent transition mt-1 py-1">
-                                            <i class="fa-solid fa-link"></i> Open Link
+                                        <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-jp-gray/70 hover:text-jp-accent transition mt-1 py-1">
+                                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟連結
                                         </a>
                                         <p v-else class="text-xs text-jp-gray/80 bg-jp-bg p-2 rounded-lg mt-1 border border-jp-border">
                                             <i class="fa-regular fa-note-sticky mr-1"></i> {{ event.note }}
@@ -280,9 +292,7 @@
                                     <div class="mt-4 flex items-center justify-center opacity-20"><div class="h-[1px] w-full bg-jp-text"></div><i class="fa-solid fa-plane mx-2 text-xs text-jp-text transform rotate-180"></i><div class="h-[1px] w-full bg-jp-text"></div></div>
                                 </div>
                             </transition>
-                            <!-- Boarding Pass Cutout -->
-                            <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
-                            <div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
+                            <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div><div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                         </div>
                     </div>
                 </div>
@@ -342,12 +352,48 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Tab 4: AI Guide (New) -->
+            <div v-if="activeTab === 'ai'" class="h-full flex flex-col pb-20">
+                <div class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar" id="chat-container">
+                    <div v-if="chatHistory.length === 0" class="text-center mt-10 text-jp-gray opacity-60">
+                        <i class="fa-solid fa-robot text-4xl mb-3"></i>
+                        <p class="text-sm">我是您的京都 AI 導遊<br>請輸入問題或行程需求</p>
+                    </div>
+                    <div v-for="(msg, idx) in chatHistory" :key="idx" class="flex flex-col" :class="msg.role === 'user' ? 'items-end' : 'items-start'">
+                        <div 
+                            class="max-w-[85%] rounded-2xl p-3 text-sm shadow-sm whitespace-pre-wrap prose prose-sm"
+                            :class="msg.role === 'user' ? 'bg-jp-accent text-white rounded-br-none' : 'bg-jp-surface border border-jp-border text-jp-text rounded-bl-none'"
+                            v-html="msg.role === 'model' ? marked.parse(msg.content) : msg.content"
+                        ></div>
+                        <span class="text-[10px] text-jp-gray mt-1 mx-1">{{ msg.role === 'user' ? 'You' : 'AI Guide' }}</span>
+                    </div>
+                    <div v-if="isAiLoading" class="flex items-start">
+                        <div class="bg-jp-surface border border-jp-border rounded-2xl rounded-bl-none p-3 shadow-sm">
+                            <div class="flex space-x-1">
+                                <div class="w-2 h-2 bg-jp-gray rounded-full animate-bounce"></div>
+                                <div class="w-2 h-2 bg-jp-gray rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                                <div class="w-2 h-2 bg-jp-gray rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 bg-jp-surface border-t border-jp-border">
+                    <form @submit.prevent="sendAiMessage" class="flex gap-2">
+                        <input v-model="aiInput" type="text" placeholder="Ask about Kyoto..." class="flex-1 bg-jp-bg border border-jp-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-jp-accent transition text-jp-text">
+                        <button type="submit" :disabled="!aiInput.trim() || isAiLoading || !geminiApiKey" class="bg-jp-accent text-white w-12 rounded-xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:opacity-90 transition">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
+                    <p v-if="!geminiApiKey" class="text-[10px] text-red-400 text-center mt-2">Please set Gemini API Key in Settings to use AI features.</p>
+                </div>
+            </div>
         </main>
 
         <!-- FAB -->
-        <button v-if="activeTab !== 'map'" @click="openAddModal" class="absolute bottom-24 right-6 w-14 h-14 bg-jp-text text-jp-bg rounded-full shadow-float flex items-center justify-center text-xl transition-transform hover:scale-105 active:scale-95 z-30"><i class="fa-solid fa-plus not-italic"></i></button>
+        <button v-if="activeTab !== 'map' && activeTab !== 'ai'" @click="openAddModal" class="absolute bottom-24 right-6 w-14 h-14 bg-jp-text text-jp-bg rounded-full shadow-float flex items-center justify-center text-xl transition-transform hover:scale-105 active:scale-95 z-30"><i class="fa-solid fa-plus not-italic"></i></button>
 
-        <!-- Bottom Nav (Updated Style) -->
+        <!-- Bottom Nav -->
         <nav class="absolute bottom-0 w-full h-20 bg-jp-surface border-t border-jp-border flex justify-around items-start pt-4 z-[800]">
             <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
                 <i class="fa-solid fa-calendar-days text-lg mb-1"></i>
@@ -360,6 +406,11 @@
             <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
                 <i class="fa-solid fa-map text-lg mb-1"></i>
                 <span class="text-[9px] tracking-wider uppercase font-medium">Map</span>
+            </button>
+            <!-- New AI Tab -->
+            <button @click="activeTab = 'ai'" :class="activeTab === 'ai' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg mb-1"></i>
+                <span class="text-[9px] tracking-wider uppercase font-medium">✨ AI</span>
             </button>
         </nav>
 
@@ -442,14 +493,28 @@
             </div>
         </transition>
         
+        <!-- Settings Modal (Updated with Gemini Key) -->
         <transition name="fade">
             <div v-if="showSettings" class="absolute inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
-                <div class="bg-jp-surface w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-jp-border">
+                <div class="bg-jp-surface w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-jp-border max-h-[80vh] overflow-y-auto">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="font-medium text-lg text-jp-text">Settings</h3>
                         <button @click="showSettings = false" class="w-8 h-8 rounded-full bg-jp-bg flex items-center justify-center text-jp-gray"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     
+                    <!-- Gemini API Key Input -->
+                    <div class="mb-6">
+                        <label class="text-[10px] uppercase tracking-widest text-jp-gray block mb-2 flex justify-between">
+                            <span>Gemini API Key</span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-jp-accent underline">Get Key</a>
+                        </label>
+                        <div class="flex items-center bg-jp-bg rounded-lg px-4 py-2 border border-jp-border">
+                            <i class="fa-solid fa-key text-jp-gray text-sm mr-2"></i>
+                            <input v-model="geminiApiKey" type="password" placeholder="Paste your AI Studio Key" class="flex-1 bg-transparent focus:outline-none font-mono text-jp-text text-sm">
+                        </div>
+                        <p class="text-[10px] text-jp-gray/60 mt-1">Key is saved locally in your browser.</p>
+                    </div>
+
                     <div class="mb-6">
                         <label class="text-[10px] uppercase tracking-widest text-jp-gray block mb-2">Theme Style</label>
                         <div class="grid grid-cols-3 gap-2">
@@ -538,6 +603,12 @@
                 const mapInstance = ref(null);
                 const markers = ref([]);
                 const userMarker = ref(null);
+                
+                // AI related state
+                const geminiApiKey = ref(localStorage.getItem('jp_gemini_key') || '');
+                const aiInput = ref('');
+                const chatHistory = ref([]);
+                const isAiLoading = ref(false);
 
                 const defaultTravelers = ['Me', 'You'];
                 const defaultDays = [ { date: getFixedDate(0), flight: { number: '', time: '', from: 'TPE', to: 'KIX', arrivalDate: getFixedDate(0), arrivalTime: '' }, events: [ { id: 1, time: '14:00', title: 'Check-in Hotel', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }, { id: 2, time: '16:00', title: '清水寺 Kiyomizu-dera', location: 'Kiyomizu-dera', lat: 34.994856, lng: 135.785046, category: 'sightseeing', note: 'https://www.kiyomizudera.or.jp/en/' } ] }, { date: getFixedDate(1), flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(1), arrivalTime: '' }, events: [ { id: 4, time: '10:00', title: '嵐山竹林', location: 'Arashiyama Bamboo Grove', lat: 35.017, lng: 135.670, category: 'sightseeing', note: '' }, { id: 5, time: '19:00', title: '燒肉弘', location: 'Yakiniku Hiro', lat: 35.006, lng: 135.770, category: 'food', note: 'Booked via TableCheck' } ] } ];
@@ -625,6 +696,8 @@
                 };
                 const changeTheme = (t) => theme.value = t;
 
+                watch(geminiApiKey, (n) => localStorage.setItem('jp_gemini_key', n));
+
                 const getExpenseCategoryIcon = (catId) => { const cat = expenseCategories.find(c => c.id === catId); return cat ? cat.icon : 'fa-receipt'; };
                 const getExpenseCategoryColor = (catId) => { const cat = expenseCategories.find(c => c.id === catId); return cat ? cat.color : 'bg-gray-100 text-gray-500'; };
                 const toggleFlight = (index) => { flightExpanded.value[index] = !flightExpanded.value[index]; };
@@ -669,7 +742,13 @@
                     if (events.filter(e => e.lat).length > 0) mapInstance.value.fitBounds(group.getBounds().pad(0.1));
                 };
                 
-                watch(activeTab, (newTab) => { if (newTab === 'map') setTimeout(() => { initMap(); if(mapInstance.value) mapInstance.value.invalidateSize(); updateMapMarkers(); }, 100); });
+                watch(activeTab, (newTab) => { 
+                    if (newTab === 'map') setTimeout(() => { initMap(); if(mapInstance.value) mapInstance.value.invalidateSize(); updateMapMarkers(); }, 100); 
+                    if (newTab === 'ai') nextTick(() => {
+                         const container = document.getElementById('chat-container');
+                         if(container) container.scrollTop = container.scrollHeight;
+                    });
+                });
                 watch(currentDayIndex, () => { if (activeTab.value === 'map') updateMapMarkers(); });
                 const locateUser = () => { if (!navigator.geolocation) return alert("Geolocation not supported"); navigator.geolocation.getCurrentPosition((pos) => { const lat = pos.coords.latitude, lng = pos.coords.longitude; if (userMarker.value) mapInstance.value.removeLayer(userMarker.value); const pulseIcon = L.divIcon({ className: 'user-location-marker', iconSize: [20, 20] }); userMarker.value = L.marker([lat, lng], { icon: pulseIcon }).addTo(mapInstance.value); mapInstance.value.flyTo([lat, lng], 15); }, () => { alert("Unable to retrieve location"); }); };
                 const flyToLocation = (loc) => { if (mapInstance.value && loc.lat && loc.lng) mapInstance.value.flyTo([loc.lat, loc.lng], 16); };
@@ -682,7 +761,7 @@
                 const sortedExpenses = computed(() => [...expenses.value].sort((a, b) => new Date(b.date) - new Date(a.date)));
                 const totalExpense = computed(() => expenses.value.reduce((sum, item) => sum + item.amount, 0));
                 const mapLocations = computed(() => currentDayEvents.value.filter(e => e.location));
-                const getTabTitle = computed(() => { if (activeTab.value === 'itinerary') return 'Kyoto Plan'; if (activeTab.value === 'expenses') return 'Expenses'; return 'Navigation'; });
+                const getTabTitle = computed(() => { if (activeTab.value === 'itinerary') return 'Kyoto Plan'; if (activeTab.value === 'expenses') return 'Expenses'; if(activeTab.value === 'ai') return 'AI Guide'; return 'Navigation'; });
                 const debts = computed(() => { if (travelers.value.length === 0) return []; const balances = {}; travelers.value.forEach(p => balances[p] = 0); const total = totalExpense.value; const perPerson = total / travelers.value.length; expenses.value.forEach(exp => { if (balances[exp.payer] !== undefined) balances[exp.payer] += exp.amount; }); travelers.value.forEach(p => balances[p] -= perPerson); let debtors = [], creditors = []; for (const [person, amount] of Object.entries(balances)) { if (amount < -1) debtors.push({ person, amount }); if (amount > 1) creditors.push({ person, amount }); } debtors.sort((a, b) => a.amount - b.amount); creditors.sort((a, b) => b.amount - a.amount); const transactions = []; let i = 0, j = 0; while (i < debtors.length && j < creditors.length) { const debtor = debtors[i]; const creditor = creditors[j]; const amount = Math.min(Math.abs(debtor.amount), creditor.amount); transactions.push({ from: debtor.person, to: creditor.person, amount: amount }); debtor.amount += amount; creditor.amount -= amount; if (Math.abs(debtor.amount) < 1) i++; if (creditor.amount < 1) j++; } return transactions; });
                 const getDayName = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
                 const formatDateShort = (dateStr) => { const d = new Date(dateStr); return `${d.getMonth() + 1}/${d.getDate()}`; };
@@ -706,8 +785,72 @@
                 const triggerReset = () => { showConfirm('Reset all app data?', () => { localStorage.clear(); window.location.reload(); }); };
                 const resetAllData = () => triggerReset();
 
+                // --- Gemini Logic ---
+                const sendAiMessage = async () => {
+                    if (!aiInput.value.trim() || !geminiApiKey.value) return;
+
+                    const userMsg = aiInput.value;
+                    chatHistory.value.push({ role: 'user', content: userMsg });
+                    aiInput.value = '';
+                    isAiLoading.value = true;
+
+                    try {
+                        const apiKey = geminiApiKey.value;
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                        
+                        const itineraryContext = JSON.stringify(days.value);
+                        const expenseContext = JSON.stringify(expenses.value);
+                        
+                        const systemPrompt = `You are a helpful, knowledgeable, and friendly travel guide for a trip to Kyoto, Japan. 
+                        Current Itinerary Context: ${itineraryContext}. 
+                        Current Expense Context: ${expenseContext}.
+                        
+                        Answer the user's questions about Kyoto, provide recommendations for food, transport, or etiquette based on their itinerary. 
+                        If they ask about their plans, use the provided context. 
+                        Keep answers concise and formatted in Markdown. 
+                        Use emojis to be friendly.`;
+
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [
+                                    {
+                                        role: 'user',
+                                        parts: [{ text: systemPrompt + "\n\nUser Question: " + userMsg }]
+                                    }
+                                ]
+                            })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.error) {
+                            throw new Error(data.error.message);
+                        }
+
+                        const aiResponse = data.candidates[0].content.parts[0].text;
+                        chatHistory.value.push({ role: 'model', content: aiResponse });
+
+                    } catch (error) {
+                        console.error("Gemini Error:", error);
+                        chatHistory.value.push({ role: 'model', content: "⚠️ Sorry, I encountered an error: " + error.message });
+                    } finally {
+                        isAiLoading.value = false;
+                        nextTick(() => {
+                             const container = document.getElementById('chat-container');
+                             if(container) container.scrollTop = container.scrollHeight;
+                        });
+                    }
+                };
+
+                onMounted(() => {
+                    initSync(); // Start sync on mount
+                });
+
                 return {
-                    activeTab, days, currentDayIndex, currentDayEvents, travelers, expenses, sortedExpenses, totalExpense, debts, showEventModal, showExpenseModal, showSettings, eventForm, expenseForm, isEditing, mapLocations, confirmState, weatherData, currentKyotoWeather, getEventWeather, getWeatherIcon, isUrl, getDayName, formatDateShort, getCategoryColor, getCategoryIcon, getPaidAmount, getTabTitle, addDay, openAddModal, editEvent, saveEvent, deleteEvent, triggerDeleteEvent, closeEventModal, saveExpense, triggerDeleteExpense, clearExpenses, addTraveler, removeTraveler, triggerReset, resetAllData, executeConfirm, exchangeRate, expenseCurrency, locateUser, flyToLocation, openGoogleMaps, mapSplit, startResize, autoFillFlight, flightExpanded, toggleFlight, expenseCategories, getExpenseCategoryIcon, getExpenseCategoryColor, theme, changeTheme, isOnline, isSyncing, errorMessage
+                    activeTab, days, currentDayIndex, currentDayEvents, travelers, expenses, sortedExpenses, totalExpense, debts, showEventModal, showExpenseModal, showSettings, eventForm, expenseForm, isEditing, mapLocations, confirmState, weatherData, currentKyotoWeather, getEventWeather, getWeatherIcon, isUrl, getDayName, formatDateShort, getCategoryColor, getCategoryIcon, getPaidAmount, getTabTitle, addDay, openAddModal, editEvent, saveEvent, deleteEvent, triggerDeleteEvent, closeEventModal, saveExpense, triggerDeleteExpense, clearExpenses, addTraveler, removeTraveler, triggerReset, resetAllData, executeConfirm, exchangeRate, expenseCurrency, locateUser, flyToLocation, openGoogleMaps, mapSplit, startResize, autoFillFlight, flightExpanded, toggleFlight, expenseCategories, getExpenseCategoryIcon, getExpenseCategoryColor, theme, changeTheme, isOnline, isSyncing, errorMessage,
+                    geminiApiKey, aiInput, chatHistory, isAiLoading, sendAiMessage, marked
                 };
             }
         }).mount('#app');
