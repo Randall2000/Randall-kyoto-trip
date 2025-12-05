@@ -30,8 +30,8 @@
         }
     </script>
 
-    <!-- 3. Vue 3 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- 3. Vue 3 (Production Build) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     
     <!-- 4. Icons & Maps -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -248,7 +248,7 @@
                                     <div v-if="event.note" class="mt-1">
                                         <!-- Subtle Link Style -->
                                         <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-gray-400/80 hover:text-jp-accent transition mt-1 py-1">
-                                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟連結
+                                            <i class="fa-solid fa-link"></i> Open Link
                                         </a>
                                         <p v-else class="text-xs text-jp-gray/80 bg-jp-bg p-2 rounded-lg mt-1 border border-jp-border">
                                             <i class="fa-regular fa-note-sticky mr-1"></i> {{ event.note }}
@@ -492,15 +492,16 @@
     </div>
 
     <script type="module">
-        // --- FIREBASE SETTINGS ---
+        // --- FIREBASE SETTINGS (UPDATED: 2025-12-06) ---
+        // 請將下方物件替換為您從 Firebase Console 取得的 Config (kyoto-trip-free)
         const firebaseConfig = {
-            apiKey: "AIzaSyArnGSGswhJ4ZEj-U4sa5IYqC6xxtMsdfg",
-            authDomain: "kyototrip-eae21.firebaseapp.com",
-            projectId: "kyototrip-eae21",
-            storageBucket: "kyototrip-eae21.firebasestorage.app",
-            messagingSenderId: "656022035694",
-            appId: "1:656022035694:web:2713eb1d8adf7025b8e7ff",
-            measurementId: "G-1EFJ1M33YH"
+            apiKey: "AIzaSyCPQtJFQ6qSb5oUNo_Zk7UQbilkj6_jvos",
+            authDomain: "kyoto-trip-free.firebaseapp.com",
+            projectId: "kyoto-trip-free",
+            storageBucket: "kyoto-trip-free.firebasestorage.app",
+            messagingSenderId: "118179262238",
+            appId: "1:118179262238:web:57bb92b1252f1ec1cba30f",
+            measurementId: "G-ZWHRZP1DKS"
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
@@ -519,7 +520,13 @@
                 const remoteUpdateLock = ref(false);
                 const errorMessage = ref('');
 
-                const getFixedDate = (offset = 0) => { const d = new Date('2025-12-11'); d.setDate(d.getDate() + offset); return d.toISOString().split('T')[0]; };
+                // Set date to start from Dec 11, 2025 as requested
+                const getFixedDate = (offset = 0) => { 
+                    const d = new Date('2025-12-11');
+                    d.setDate(d.getDate() + offset); 
+                    return d.toISOString().split('T')[0]; 
+                };
+                
                 const activeTab = ref('itinerary');
                 const showEventModal = ref(false);
                 const showExpenseModal = ref(false);
@@ -541,7 +548,7 @@
                 const defaultTravelers = ['Me', 'You'];
                 const defaultDays = [ { date: getFixedDate(0), flight: { number: '', time: '', from: 'TPE', to: 'KIX', arrivalDate: getFixedDate(0), arrivalTime: '' }, events: [ { id: 1, time: '14:00', title: 'Check-in Hotel', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }, { id: 2, time: '16:00', title: '清水寺 Kiyomizu-dera', location: 'Kiyomizu-dera', lat: 34.994856, lng: 135.785046, category: 'sightseeing', note: 'https://www.kiyomizudera.or.jp/en/' } ] }, { date: getFixedDate(1), flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(1), arrivalTime: '' }, events: [ { id: 4, time: '10:00', title: '嵐山竹林', location: 'Arashiyama Bamboo Grove', lat: 35.017, lng: 135.670, category: 'sightseeing', note: '' }, { id: 5, time: '19:00', title: '燒肉弘', location: 'Yakiniku Hiro', lat: 35.006, lng: 135.770, category: 'food', note: 'Booked via TableCheck' } ] } ];
                 
-                // Correctly initialize from localStorage if present, to prevent data loss on first sync
+                // Use localStorage to prevent overwrite on reload before sync
                 const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v3')) || defaultTravelers);
                 const days = ref(JSON.parse(localStorage.getItem('jp_days_v3')) || defaultDays);
                 const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v3')) || []);
