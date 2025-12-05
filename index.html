@@ -145,9 +145,9 @@
                 <span v-if="!isOnline" class="text-[10px] bg-red-100 text-red-500 px-1 rounded ml-1 font-bold">Offline</span>
                 <span v-if="isSyncing" class="text-[10px] text-jp-accent ml-1 animate-pulse"><i class="fa-solid fa-rotate"></i></span>
             </h1>
+            <!-- Removed Red Dot Indicator -->
             <button @click="showSettings = true" class="text-jp-gray hover:text-jp-accent transition mb-1 relative">
                 <i class="fa-solid fa-sliders text-lg"></i>
-                <span v-if="!geminiApiKey" class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
         </header>
 
@@ -170,11 +170,13 @@
                     <span v-else>Loading weather...</span>
                 </div>
 
+                <!-- Date Selector with Long Press Delete -->
                 <div class="flex overflow-x-auto gap-4 px-6 pb-2 no-scrollbar snap-x-mandatory mb-4">
                     <button 
                         v-for="(day, index) in days" 
                         :key="index"
                         @click="currentDayIndex = index"
+                        @contextmenu.prevent="triggerDeleteDay(index)"
                         class="snap-center flex-shrink-0 flex flex-col items-center justify-center w-14 h-20 rounded-full transition-all duration-300 relative border border-transparent"
                         :class="currentDayIndex === index ? 'bg-jp-text text-jp-bg shadow-lg scale-105' : 'bg-jp-surface text-jp-gray border-jp-border'"
                     >
@@ -226,7 +228,9 @@
                                     <div class="mt-4 flex items-center justify-center opacity-20"><div class="h-[1px] w-full bg-jp-text"></div><i class="fa-solid fa-plane mx-2 text-xs text-jp-text"></i><div class="h-[1px] w-full bg-jp-text"></div></div>
                                 </div>
                             </transition>
-                            <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div><div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
+                            <!-- Boarding Pass Cutout -->
+                            <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
+                            <div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                         </div>
                         <a href="https://www.westjr.co.jp/global/tc/ticket/pass/haruka/" target="_blank" class="mt-3 block bg-jp-surface border border-jp-blue/30 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition active:scale-98 group">
                             <div class="flex items-center gap-3">
@@ -259,9 +263,12 @@
                                     <p class="text-xs text-jp-gray flex items-center gap-1 cursor-pointer hover:text-jp-blue hover:underline transition-colors w-fit p-1 -ml-1 rounded active:bg-jp-bg/50" v-if="event.location" @click.stop="openGoogleMaps(event.location)">
                                         <i class="fa-solid fa-location-dot text-[10px]"></i> {{ event.location }} <i class="fa-solid fa-arrow-up-right-from-square text-[8px] opacity-60"></i>
                                     </p>
+
+                                    <!-- Note / Link Display -->
                                     <div v-if="event.note" class="mt-1">
-                                        <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-jp-gray/70 hover:text-jp-accent transition mt-1 py-1">
-                                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟連結
+                                        <!-- Subtle Link Style -->
+                                        <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-gray-400/80 hover:text-jp-accent transition mt-1 py-1">
+                                            <i class="fa-solid fa-link"></i> Open Link
                                         </a>
                                         <p v-else class="text-xs text-jp-gray/80 bg-jp-bg p-2 rounded-lg mt-1 border border-jp-border">
                                             <i class="fa-regular fa-note-sticky mr-1"></i> {{ event.note }}
@@ -292,7 +299,9 @@
                                     <div class="mt-4 flex items-center justify-center opacity-20"><div class="h-[1px] w-full bg-jp-text"></div><i class="fa-solid fa-plane mx-2 text-xs text-jp-text transform rotate-180"></i><div class="h-[1px] w-full bg-jp-text"></div></div>
                                 </div>
                             </transition>
-                            <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div><div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
+                            <!-- Boarding Pass Cutout -->
+                            <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
+                            <div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                         </div>
                     </div>
                 </div>
@@ -393,7 +402,7 @@
         <!-- FAB -->
         <button v-if="activeTab !== 'map' && activeTab !== 'ai'" @click="openAddModal" class="absolute bottom-24 right-6 w-14 h-14 bg-jp-text text-jp-bg rounded-full shadow-float flex items-center justify-center text-xl transition-transform hover:scale-105 active:scale-95 z-30"><i class="fa-solid fa-plus not-italic"></i></button>
 
-        <!-- Bottom Nav -->
+        <!-- Bottom Nav (Updated Style) -->
         <nav class="absolute bottom-0 w-full h-20 bg-jp-surface border-t border-jp-border flex justify-around items-start pt-4 z-[800]">
             <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
                 <i class="fa-solid fa-calendar-days text-lg mb-1"></i>
@@ -585,7 +594,13 @@
                 const remoteUpdateLock = ref(false);
                 const errorMessage = ref('');
 
-                const getFixedDate = (offset = 0) => { const d = new Date('2025-12-11'); d.setDate(d.getDate() + offset); return d.toISOString().split('T')[0]; };
+                // Use the correct date for the itinerary (Dec 11, 2025)
+                const getFixedDate = (offset = 0) => { 
+                    const d = new Date('2025-12-11');
+                    d.setDate(d.getDate() + offset); 
+                    return d.toISOString().split('T')[0]; 
+                };
+                
                 const activeTab = ref('itinerary');
                 const showEventModal = ref(false);
                 const showExpenseModal = ref(false);
@@ -609,21 +624,70 @@
                 const aiInput = ref('');
                 const chatHistory = ref([]);
                 const isAiLoading = ref(false);
+                
+                // Add marked to the setup scope so it can be returned
+                const marked = window.marked;
 
                 const defaultTravelers = ['Me', 'You'];
-                const defaultDays = [ { date: getFixedDate(0), flight: { number: '', time: '', from: 'TPE', to: 'KIX', arrivalDate: getFixedDate(0), arrivalTime: '' }, events: [ { id: 1, time: '14:00', title: 'Check-in Hotel', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }, { id: 2, time: '16:00', title: '清水寺 Kiyomizu-dera', location: 'Kiyomizu-dera', lat: 34.994856, lng: 135.785046, category: 'sightseeing', note: 'https://www.kiyomizudera.or.jp/en/' } ] }, { date: getFixedDate(1), flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(1), arrivalTime: '' }, events: [ { id: 4, time: '10:00', title: '嵐山竹林', location: 'Arashiyama Bamboo Grove', lat: 35.017, lng: 135.670, category: 'sightseeing', note: '' }, { id: 5, time: '19:00', title: '燒肉弘', location: 'Yakiniku Hiro', lat: 35.006, lng: 135.770, category: 'food', note: 'Booked via TableCheck' } ] } ];
+                const defaultDays = [ 
+                    // DAY 1: 12/11
+                    { 
+                        date: getFixedDate(0), 
+                        flight: { number: 'IT212', time: '14:40', from: 'TPE', to: 'KIX', arrivalDate: getFixedDate(0), arrivalTime: '17:55' }, 
+                        events: [ 
+                            { id: 1, time: '20:30', title: '京都車站 Kyoto Station', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' },
+                            { id: 2, time: '21:30', title: 'Ibis Hotel', location: 'Ibis Styles Kyoto Station', lat: 34.984, lng: 135.759, category: 'stay', note: 'Check-in' } 
+                        ] 
+                    }, 
+                    // DAY 2: 12/12
+                    { 
+                        date: getFixedDate(1), 
+                        flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(1), arrivalTime: '' }, 
+                        events: [ 
+                            { id: 3, time: '08:30', title: 'Ibis Hotel', location: 'Ibis Styles Kyoto Station', lat: 34.984, lng: 135.759, category: 'stay', note: 'Departure' },
+                            { id: 4, time: '08:45', title: 'JR東海 京都站八條東口', location: 'Kyoto Station Hachijo East Exit', lat: 34.9845, lng: 135.7595, category: 'transport', note: '' },
+                            { id: 5, time: '10:00', title: '勝偉寺 Katsuo-ji', location: 'Katsuo-ji', lat: 34.867, lng: 135.491, category: 'sightseeing', note: 'Klook 電子票' },
+                            { id: 6, time: '12:45', title: '嵐山 Arashiyama', location: 'Arashiyama Bamboo Grove', lat: 35.0116, lng: 135.670, category: 'sightseeing', note: '' },
+                            { id: 7, time: '16:15', title: '金閣寺 Kinkaku-ji', location: 'Kinkaku-ji', lat: 35.0394, lng: 135.7292, category: 'sightseeing', note: '' },
+                            { id: 8, time: '17:30', title: 'JR 東海京都站', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }
+                        ] 
+                    },
+                    // DAY 3: 12/13
+                    { 
+                        date: getFixedDate(2), 
+                        flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(2), arrivalTime: '' }, 
+                        events: [ 
+                            { id: 9, time: '07:00', title: '京都車站 Kyoto Station', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' },
+                            { id: 10, time: '07:30', title: '清水寺 Kiyomizu-dera', location: 'Kiyomizu-dera', lat: 34.9949, lng: 135.7850, category: 'sightseeing', note: '' },
+                            { id: 11, time: '19:00', title: '六角ACE', location: 'Rokkaku ACE', lat: 35.0065, lng: 135.7630, category: 'food', note: '' }
+                        ] 
+                    },
+                    // DAY 4: 12/14
+                    { 
+                        date: getFixedDate(3), 
+                        flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(3), arrivalTime: '' }, 
+                        events: [ 
+                            { id: 12, time: '08:15', title: '京都站八條口巴士站', location: 'Kyoto Station Hachijo Exit', lat: 34.9845, lng: 135.7595, category: 'transport', note: '' },
+                            { id: 13, time: '10:20', title: '天橋立觀景台', location: 'Amanohashidate View Land', lat: 35.555, lng: 135.190, category: 'sightseeing', note: '' },
+                            { id: 14, time: '13:25', title: '伊根舟屋 Ine no Funaya', location: 'Ine no Funaya', lat: 35.675, lng: 135.290, category: 'sightseeing', note: '13:25-15:00' },
+                            { id: 15, time: '17:30', title: '京都站八條口', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }
+                        ] 
+                    }
+                ];
                 
-                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v3')) || defaultTravelers);
-                const days = ref(JSON.parse(localStorage.getItem('jp_days_v3')) || defaultDays);
-                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v3')) || []);
+                // Use v5 to force refresh for new itinerary
+                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v5')) || defaultTravelers);
+                const days = ref(JSON.parse(localStorage.getItem('jp_days_v5')) || defaultDays);
+                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v5')) || []);
 
                 const eventForm = ref({ id: null, title: '', time: '', location: '', lat: null, lng: null, category: 'sightseeing', note: '' });
                 const expenseForm = ref({ id: null, amount: '', title: '', payer: travelers.value[0], date: '', category: 'food' });
 
-                const flightDB = { 'JX820': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:50' }, 'JX821': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:15' }, 'CI156': { from: 'TPE', to: 'KIX', dep: '08:10', arr: '11:40' }, 'CI157': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:20' }, 'CI172': { from: 'TPE', to: 'KIX', dep: '14:20', arr: '17:50' }, 'CI173': { from: 'KIX', to: 'TPE', dep: '19:05', arr: '21:35' }, 'BR132': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:55' }, 'BR131': { from: 'KIX', to: 'TPE', dep: '13:10', arr: '15:35' }, 'BR130': { from: 'TPE', to: 'KIX', dep: '12:30', arr: '16:00' }, 'BR129': { from: 'KIX', to: 'TPE', dep: '18:30', arr: '20:50' }, 'IT210': { from: 'TPE', to: 'KIX', dep: '07:00', arr: '10:25' }, 'IT211': { from: 'KIX', to: 'TPE', dep: '11:15', arr: '13:30' }, 'JL816': { from: 'TPE', to: 'KIX', dep: '12:15', arr: '15:45' }, 'JL813': { from: 'KIX', to: 'TPE', dep: '09:10', arr: '11:30' } };
+                const flightDB = { 'IT212': { from: 'TPE', to: 'KIX', dep: '14:40', arr: '17:55' }, 'JX820': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:50' }, 'JX821': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:15' }, 'CI156': { from: 'TPE', to: 'KIX', dep: '08:10', arr: '11:40' }, 'CI157': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:20' }, 'CI172': { from: 'TPE', to: 'KIX', dep: '14:20', arr: '17:50' }, 'CI173': { from: 'KIX', to: 'TPE', dep: '19:05', arr: '21:35' }, 'BR132': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:55' }, 'BR131': { from: 'KIX', to: 'TPE', dep: '13:10', arr: '15:35' }, 'BR130': { from: 'TPE', to: 'KIX', dep: '12:30', arr: '16:00' }, 'BR129': { from: 'KIX', to: 'TPE', dep: '18:30', arr: '20:50' }, 'IT210': { from: 'TPE', to: 'KIX', dep: '07:00', arr: '10:25' }, 'IT211': { from: 'KIX', to: 'TPE', dep: '11:15', arr: '13:30' }, 'JL816': { from: 'TPE', to: 'KIX', dep: '12:15', arr: '15:45' }, 'JL813': { from: 'KIX', to: 'TPE', dep: '09:10', arr: '11:30' } };
                 const expenseCategories = [ { id: 'food', label: 'Food', icon: 'fa-utensils', color: 'bg-orange-100 text-orange-500' }, { id: 'transport', label: 'Transport', icon: 'fa-train-subway', color: 'bg-blue-100 text-blue-500' }, { id: 'shopping', label: 'Shopping', icon: 'fa-bag-shopping', color: 'bg-purple-100 text-purple-500' }, { id: 'sightseeing', label: 'Sightseeing', icon: 'fa-camera', color: 'bg-red-100 text-red-500' }, { id: 'stay', label: 'Stay', icon: 'fa-bed', color: 'bg-indigo-100 text-indigo-500' }, { id: 'other', label: 'Other', icon: 'fa-receipt', color: 'bg-gray-100 text-gray-500' } ];
 
-                const tripDocRef = doc(db, 'trips', 'shared_trip_v1');
+                // Changed document ID to force a fresh start with new data
+                const tripDocRef = doc(db, 'trips', 'shared_trip_randall_final_v2');
 
                 const initSync = async () => {
                     try {
@@ -685,19 +749,20 @@
                     }
                 };
 
+                // Deep Watchers for all state
                 watch([travelers, days, expenses, exchangeRate, theme], () => {
                     saveToFirebase();
                 }, { deep: true });
 
+                // --- Regular Logic ---
                 const applyTheme = (t) => {
                     if (t === 'default') document.documentElement.removeAttribute('data-theme');
                     else document.documentElement.setAttribute('data-theme', t);
                     if (mapInstance.value && activeTab.value === 'map') initMap(true);
                 };
-                const changeTheme = (t) => theme.value = t;
+                const changeTheme = (t) => theme.value = t; // Watcher handles saving
 
-                watch(geminiApiKey, (n) => localStorage.setItem('jp_gemini_key', n));
-
+                // ... (Keep all existing helper functions identical) ...
                 const getExpenseCategoryIcon = (catId) => { const cat = expenseCategories.find(c => c.id === catId); return cat ? cat.icon : 'fa-receipt'; };
                 const getExpenseCategoryColor = (catId) => { const cat = expenseCategories.find(c => c.id === catId); return cat ? cat.color : 'bg-gray-100 text-gray-500'; };
                 const toggleFlight = (index) => { flightExpanded.value[index] = !flightExpanded.value[index]; };
@@ -784,6 +849,22 @@
                 const removeTraveler = (idx) => travelers.value.splice(idx, 1);
                 const triggerReset = () => { showConfirm('Reset all app data?', () => { localStorage.clear(); window.location.reload(); }); };
                 const resetAllData = () => triggerReset();
+                
+                // --- Date Delete Logic ---
+                const triggerDeleteDay = (index) => {
+                    if (days.value.length <= 1) {
+                         // Don't delete the last day to keep app functional
+                         return;
+                    }
+                    showConfirm(`Delete Day ${index + 1}?`, () => {
+                        days.value.splice(index, 1);
+                        // Adjust current index if needed
+                        if (currentDayIndex.value >= days.value.length) {
+                            currentDayIndex.value = Math.max(0, days.value.length - 1);
+                        }
+                        // This will trigger watcher to save to Firebase
+                    });
+                };
 
                 // --- Gemini Logic ---
                 const sendAiMessage = async () => {
@@ -850,7 +931,7 @@
 
                 return {
                     activeTab, days, currentDayIndex, currentDayEvents, travelers, expenses, sortedExpenses, totalExpense, debts, showEventModal, showExpenseModal, showSettings, eventForm, expenseForm, isEditing, mapLocations, confirmState, weatherData, currentKyotoWeather, getEventWeather, getWeatherIcon, isUrl, getDayName, formatDateShort, getCategoryColor, getCategoryIcon, getPaidAmount, getTabTitle, addDay, openAddModal, editEvent, saveEvent, deleteEvent, triggerDeleteEvent, closeEventModal, saveExpense, triggerDeleteExpense, clearExpenses, addTraveler, removeTraveler, triggerReset, resetAllData, executeConfirm, exchangeRate, expenseCurrency, locateUser, flyToLocation, openGoogleMaps, mapSplit, startResize, autoFillFlight, flightExpanded, toggleFlight, expenseCategories, getExpenseCategoryIcon, getExpenseCategoryColor, theme, changeTheme, isOnline, isSyncing, errorMessage,
-                    geminiApiKey, aiInput, chatHistory, isAiLoading, sendAiMessage, marked
+                    geminiApiKey, aiInput, chatHistory, isAiLoading, sendAiMessage, marked, triggerDeleteDay
                 };
             }
         }).mount('#app');
