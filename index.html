@@ -250,8 +250,12 @@
                                         <i class="fa-solid fa-location-dot text-[10px]"></i> {{ event.location }} <i class="fa-solid fa-arrow-up-right-from-square text-[8px] opacity-60"></i>
                                     </p>
                                     <div v-if="event.note" class="mt-1">
-                                        <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-gray-400/80 hover:text-jp-accent transition mt-1 py-1"><i class="fa-solid fa-link"></i> Open Link</a>
-                                        <p v-else class="text-xs text-jp-gray/80 bg-jp-bg p-2 rounded-lg mt-1 border border-jp-border"><i class="fa-regular fa-note-sticky mr-1"></i> {{ event.note }}</p>
+                                        <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-gray-400/80 hover:text-jp-accent transition mt-1 py-1">
+                                            <i class="fa-solid fa-link"></i> Open Link
+                                        </a>
+                                        <p v-else class="text-xs text-jp-gray/80 bg-jp-bg p-2 rounded-lg mt-1 border border-jp-border">
+                                            <i class="fa-regular fa-note-sticky mr-1"></i> {{ event.note }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -345,11 +349,20 @@
         <!-- FAB -->
         <button v-if="activeTab !== 'map'" @click="openAddModal" class="absolute bottom-24 right-6 w-14 h-14 bg-jp-text text-jp-bg rounded-full shadow-float flex items-center justify-center text-xl transition-transform hover:scale-105 active:scale-95 z-30"><i class="fa-solid fa-plus not-italic"></i></button>
 
-        <!-- Bottom Nav -->
+        <!-- Bottom Nav (Updated Style) -->
         <nav class="absolute bottom-0 w-full h-20 bg-jp-surface border-t border-jp-border flex justify-around items-start pt-4 z-[800]">
-            <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-calendar-days text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Plan</span></button>
-            <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-wallet text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Wallet</span></button>
-            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-map text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Map</span></button>
+            <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
+                <i class="fa-solid fa-calendar-days text-lg mb-1"></i>
+                <span class="text-[9px] tracking-wider uppercase font-medium">Plan</span>
+            </button>
+            <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
+                <i class="fa-solid fa-wallet text-lg mb-1"></i>
+                <span class="text-[9px] tracking-wider uppercase font-medium">Wallet</span>
+            </button>
+            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
+                <i class="fa-solid fa-map text-lg mb-1"></i>
+                <span class="text-[9px] tracking-wider uppercase font-medium">Map</span>
+            </button>
         </nav>
 
         <!-- Modals -->
@@ -509,7 +522,13 @@
                 const remoteUpdateLock = ref(false);
                 const errorMessage = ref('');
 
-                const getFixedDate = (offset = 0) => { const d = new Date('2025-12-11'); d.setDate(d.getDate() + offset); return d.toISOString().split('T')[0]; };
+                // Set date to start from Dec 11, 2025 as requested
+                const getFixedDate = (offset = 0) => { 
+                    const d = new Date('2025-12-11');
+                    d.setDate(d.getDate() + offset); 
+                    return d.toISOString().split('T')[0]; 
+                };
+                
                 const activeTab = ref('itinerary');
                 const showEventModal = ref(false);
                 const showExpenseModal = ref(false);
@@ -531,7 +550,7 @@
                 const defaultTravelers = ['Me', 'You'];
                 const defaultDays = [ { date: getFixedDate(0), flight: { number: '', time: '', from: 'TPE', to: 'KIX', arrivalDate: getFixedDate(0), arrivalTime: '' }, events: [ { id: 1, time: '14:00', title: 'Check-in Hotel', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }, { id: 2, time: '16:00', title: '清水寺 Kiyomizu-dera', location: 'Kiyomizu-dera', lat: 34.994856, lng: 135.785046, category: 'sightseeing', note: 'https://www.kiyomizudera.or.jp/en/' } ] }, { date: getFixedDate(1), flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(1), arrivalTime: '' }, events: [ { id: 4, time: '10:00', title: '嵐山竹林', location: 'Arashiyama Bamboo Grove', lat: 35.017, lng: 135.670, category: 'sightseeing', note: '' }, { id: 5, time: '19:00', title: '燒肉弘', location: 'Yakiniku Hiro', lat: 35.006, lng: 135.770, category: 'food', note: 'Booked via TableCheck' } ] } ];
                 
-                // Correctly initialize from localStorage if present, to prevent data loss on first sync
+                // Use localStorage to prevent overwrite on reload before sync
                 const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v3')) || defaultTravelers);
                 const days = ref(JSON.parse(localStorage.getItem('jp_days_v3')) || defaultDays);
                 const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v3')) || []);
@@ -546,32 +565,27 @@
 
                 const initSync = async () => {
                     try {
-                        // Sign in
+                        // Sign in anonymously
                         await signInAnonymously(auth);
                         isOnline.value = true;
 
-                        // Start Listener
+                        // Start Firestore Listener
                         onSnapshot(tripDocRef, (docSnap) => {
                             if (docSnap.exists()) {
                                 remoteUpdateLock.value = true;
                                 const data = docSnap.data();
-                                // Update local state
                                 travelers.value = data.travelers || defaultTravelers;
                                 days.value = data.days || defaultDays;
                                 expenses.value = data.expenses || [];
                                 exchangeRate.value = data.exchangeRate || 0.22;
                                 theme.value = data.theme || 'default';
-                                
-                                // Apply theme from DB
                                 applyTheme(theme.value);
-                                
-                                // Unlock after DOM update
                                 nextTick(() => { 
                                     remoteUpdateLock.value = false; 
                                     if(activeTab.value === 'map') updateMapMarkers();
                                 });
                             } else {
-                                // First time: Create doc with current defaults
+                                // Create doc if not exists
                                 saveToFirebase();
                             }
                         }, (error) => {
