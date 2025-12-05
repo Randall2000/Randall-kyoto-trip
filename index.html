@@ -347,18 +347,9 @@
 
         <!-- Bottom Nav -->
         <nav class="absolute bottom-0 w-full h-20 bg-jp-surface border-t border-jp-border flex justify-around items-start pt-4 z-[800]">
-            <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
-                <i class="fa-solid fa-calendar-days text-lg mb-1"></i>
-                <span class="text-[9px] tracking-wider uppercase font-medium">Plan</span>
-            </button>
-            <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
-                <i class="fa-solid fa-wallet text-lg mb-1"></i>
-                <span class="text-[9px] tracking-wider uppercase font-medium">Wallet</span>
-            </button>
-            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
-                <i class="fa-solid fa-map text-lg mb-1"></i>
-                <span class="text-[9px] tracking-wider uppercase font-medium">Map</span>
-            </button>
+            <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-calendar-days text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Plan</span></button>
+            <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-wallet text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Wallet</span></button>
+            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-map text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Map</span></button>
         </nav>
 
         <!-- Modals -->
