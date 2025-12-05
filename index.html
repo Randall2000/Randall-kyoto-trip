@@ -131,7 +131,7 @@
             <h1 class="text-xl font-medium tracking-widest text-jp-text flex items-center gap-2">
                 <span class="text-jp-red opacity-80"><i class="fa-solid fa-torii-gate"></i></span>
                 {{ getTabTitle }}
-                <span v-if="!isOnline" class="text-[10px] bg-red-100 text-red-500 px-1 rounded ml-1">Offline</span>
+                <span v-if="!isOnline" class="text-[10px] bg-red-100 text-red-500 px-1 rounded ml-1 font-bold">Offline</span>
                 <span v-if="isSyncing" class="text-[10px] text-jp-accent ml-1 animate-pulse"><i class="fa-solid fa-rotate"></i></span>
             </h1>
             <button @click="showSettings = true" class="text-jp-gray hover:text-jp-accent transition mb-1">
@@ -139,9 +139,9 @@
             </button>
         </header>
 
-        <!-- Connection Error Banner -->
-        <div v-if="errorMessage" class="bg-red-500 text-white px-4 py-2 text-xs text-center z-50">
-            <i class="fa-solid fa-triangle-exclamation mr-1"></i> {{ errorMessage }}
+        <!-- Connection Error Banner (Sticky Top) -->
+        <div v-if="errorMessage" class="bg-red-500 text-white px-4 py-3 text-xs text-center z-50 absolute top-16 left-0 right-0 shadow-md">
+            <i class="fa-solid fa-circle-exclamation mr-1 text-sm"></i> {{ errorMessage }}
         </div>
 
         <!-- Main Content -->
@@ -347,9 +347,18 @@
 
         <!-- Bottom Nav -->
         <nav class="absolute bottom-0 w-full h-20 bg-jp-surface border-t border-jp-border flex justify-around items-start pt-4 z-[800]">
-            <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-calendar-days text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Plan</span></button>
-            <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-wallet text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Wallet</span></button>
-            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-map text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Map</span></button>
+            <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
+                <i class="fa-solid fa-calendar-days text-lg mb-1"></i>
+                <span class="text-[9px] tracking-wider uppercase font-medium">Plan</span>
+            </button>
+            <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
+                <i class="fa-solid fa-wallet text-lg mb-1"></i>
+                <span class="text-[9px] tracking-wider uppercase font-medium">Wallet</span>
+            </button>
+            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
+                <i class="fa-solid fa-map text-lg mb-1"></i>
+                <span class="text-[9px] tracking-wider uppercase font-medium">Map</span>
+            </button>
         </nav>
 
         <!-- Modals -->
