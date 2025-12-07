@@ -793,24 +793,69 @@
                     fetchWeather();
                     initSync();
                     
-                    // --- Auto-generate Apple Touch Icon ---
-                    // Generates a 180x180 PNG with cream background and red torii emoji
+                    // --- Auto-generate Apple Touch Icon (Custom Flat Design) ---
+                    // Generates a 180x180 PNG matches the user's uploaded image style
                     const canvas = document.createElement('canvas');
                     canvas.width = 180;
                     canvas.height = 180;
                     const ctx = canvas.getContext('2d');
                     
-                    // Background Color (#FDFBF7)
-                    ctx.fillStyle = '#FDFBF7';
-                    ctx.fillRect(0, 0, 180, 180);
+                    // 1. Background (Cream/Off-white)
+                    ctx.fillStyle = '#F8F5F0'; // Light cream color matching the image
+                    ctx.beginPath();
+                    // Draw a rounded rectangle for the background
+                    const r = 36; // border radius
+                    const s = 180;
+                    ctx.moveTo(r, 0);
+                    ctx.lineTo(s - r, 0);
+                    ctx.quadraticCurveTo(s, 0, s, r);
+                    ctx.lineTo(s, s - r);
+                    ctx.quadraticCurveTo(s, s, s - r, s);
+                    ctx.lineTo(r, s);
+                    ctx.quadraticCurveTo(0, s, 0, s - r);
+                    ctx.lineTo(0, r);
+                    ctx.quadraticCurveTo(0, 0, r, 0);
+                    ctx.fill();
                     
-                    // Emoji text (#CB7E76 is close to Torii red, but emojis have their own colors)
-                    // We rely on the system emoji font which is usually colored.
-                    ctx.font = '140px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('⛩️', 90, 95); 
+                    // 2. Torii Gate Drawing
+                    ctx.fillStyle = '#B02E29'; // Deep Red color from the image
                     
+                    // Shift coordinate system to center
+                    ctx.translate(90, 95);
+                    
+                    // A. Pillars (Hashira) - Left & Right
+                    // Slightly tapered look
+                    const pillarW = 14;
+                    const pillarH = 90;
+                    const pillarX = 35;
+                    
+                    // Left Pillar
+                    ctx.fillRect(-pillarX - pillarW/2, -30, pillarW, pillarH);
+                    // Right Pillar
+                    ctx.fillRect(pillarX - pillarW/2, -30, pillarW, pillarH);
+                    
+                    // B. Top Lintel (Kasagi) - The curved top part
+                    ctx.beginPath();
+                    const topW = 65; // Half width
+                    const topY = -45;
+                    ctx.moveTo(-topW, topY);
+                    // Curve up
+                    ctx.bezierCurveTo(-30, topY + 10, 30, topY + 10, topW, topY);
+                    // Ends
+                    ctx.lineTo(topW + 2, topY - 14);
+                    ctx.bezierCurveTo(30, topY - 4, -30, topY - 4, -topW - 2, topY - 14);
+                    ctx.fill();
+
+                    // C. Second Lintel (Nuki) - The straight bar below
+                    // Extends slightly past pillars
+                    const nukiW = 50; // Half width
+                    const nukiH = 11;
+                    const nukiY = -15;
+                    ctx.fillRect(-nukiW, nukiY, nukiW * 2, nukiH);
+                    
+                    // D. Center Strut (Gakuzuka)
+                    ctx.fillRect(-6, topY, 12, nukiY - topY + 5);
+
                     // Inject into the link tag
                     const iconUrl = canvas.toDataURL('image/png');
                     const link = document.getElementById('app-icon');
