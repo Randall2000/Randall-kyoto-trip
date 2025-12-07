@@ -7,11 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛩️</text></svg>">
     
     <!-- --- PWA / Mobile Web App Settings --- -->
-    <!-- 1. iOS/Android Home Screen Icon -->
-    <!-- Updated: Matches the top-left UI (Cream Background #FDFBF7, Red Icon #CB7E76) -->
     <link rel="apple-touch-icon" href="https://placehold.co/180x180/FDFBF7/CB7E76.png?text=⛩️&font=roboto">
-    
-    <!-- 2. Web App Mode (Hides browser UI when added to home screen) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Kyoto Trip">
@@ -184,7 +180,7 @@
                 </div>
 
                 <div class="px-6 space-y-6">
-                    <div v-if="currentDayIndex === 0" class="mb-2">
+                    <div v-if="currentDayIndex === 0 && days[0].flight" class="mb-2">
                         <div class="bg-jp-surface rounded-2xl shadow-sm border border-jp-border overflow-hidden relative group transition-all">
                             <div class="h-2 bg-jp-blue w-full"></div>
                             <div @click="toggleFlight(0)" class="p-4 flex justify-between items-center cursor-pointer bg-jp-surface z-10 relative">
@@ -225,7 +221,7 @@
                             <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                             <div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                         </div>
-                        <a href="https://www.westjr.co.jp/global/tc/ticket/pass/haruka/" target="_blank" class="mt-3 block bg-jp-surface border border-jp-blue/30 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition active:scale-98 group">
+                        <a href="https://guest-ui.west-qr.com/#/packages/login/index" target="_blank" class="mt-3 block bg-jp-surface border border-jp-blue/30 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition active:scale-98 group">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-full bg-blue-500/10 text-jp-blue flex items-center justify-center"><i class="fa-solid fa-train-subway"></i></div>
                                 <div><div class="text-xs text-jp-blue font-bold tracking-wider">JR WEST</div><div class="text-sm font-bold text-jp-text">Haruka 訂位 / 選位</div></div>
@@ -272,7 +268,7 @@
                         </div>
                     </div>
 
-                    <div v-if="currentDayIndex === days.length - 1" class="mt-6 mb-4">
+                    <div v-if="currentDayIndex === days.length - 1 && days[currentDayIndex].flight" class="mt-6 mb-4">
                          <div class="bg-jp-surface rounded-2xl shadow-sm border border-jp-border overflow-hidden relative group transition-all">
                             <div class="h-2 bg-jp-red w-full"></div>
                             <div @click="toggleFlight(currentDayIndex)" class="p-4 flex justify-between items-center cursor-pointer bg-jp-surface z-10 relative">
@@ -296,6 +292,13 @@
                             <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                             <div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                         </div>
+                        <a href="https://guest-ui.west-qr.com/#/packages/login/index" target="_blank" class="mt-3 block bg-jp-surface border border-jp-red/30 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition active:scale-98 group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-red-500/10 text-jp-red flex items-center justify-center"><i class="fa-solid fa-train-subway"></i></div>
+                                <div><div class="text-xs text-jp-red font-bold tracking-wider">JR WEST</div><div class="text-sm font-bold text-jp-text">Haruka 訂位 / 選位</div></div>
+                            </div>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-jp-gray text-xs mr-1"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -554,8 +557,21 @@
                 const defaultTravelers = ['Me', 'You'];
                 const defaultDays = [ { date: getFixedDate(0), flight: { number: '', time: '', from: 'TPE', to: 'KIX', arrivalDate: getFixedDate(0), arrivalTime: '' }, events: [ { id: 1, time: '14:00', title: 'Check-in Hotel', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }, { id: 2, time: '16:00', title: '清水寺 Kiyomizu-dera', location: 'Kiyomizu-dera', lat: 34.994856, lng: 135.785046, category: 'sightseeing', note: 'https://www.kiyomizudera.or.jp/en/' } ] }, { date: getFixedDate(1), flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(1), arrivalTime: '' }, events: [ { id: 4, time: '10:00', title: '嵐山竹林', location: 'Arashiyama Bamboo Grove', lat: 35.017, lng: 135.670, category: 'sightseeing', note: '' }, { id: 5, time: '19:00', title: '燒肉弘', location: 'Yakiniku Hiro', lat: 35.006, lng: 135.770, category: 'food', note: 'Booked via TableCheck' } ] } ];
                 
+                // --- CRITICAL DATA REPAIR FUNCTION ---
+                // Ensures older data structures (missing flight info) don't crash the UI
+                const ensureValidData = (dataDays) => {
+                    if (!Array.isArray(dataDays) || dataDays.length === 0) return defaultDays;
+                    return dataDays.map(day => ({
+                        ...day,
+                        date: day.date || new Date().toISOString().split('T')[0],
+                        flight: day.flight || { number: '', time: '', from: '', to: '', arrivalDate: day.date, arrivalTime: '' },
+                        events: Array.isArray(day.events) ? day.events : []
+                    }));
+                };
+
                 const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v3')) || defaultTravelers);
-                const days = ref(JSON.parse(localStorage.getItem('jp_days_v3')) || defaultDays);
+                // Apply repair on load
+                const days = ref(ensureValidData(JSON.parse(localStorage.getItem('jp_days_v3'))));
                 const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v3')) || []);
 
                 const eventForm = ref({ id: null, title: '', time: '', location: '', lat: null, lng: null, category: 'sightseeing', note: '' });
@@ -564,7 +580,7 @@
                 const flightDB = { 'JX820': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:50' }, 'JX821': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:15' }, 'CI156': { from: 'TPE', to: 'KIX', dep: '08:10', arr: '11:40' }, 'CI157': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:20' }, 'CI172': { from: 'TPE', to: 'KIX', dep: '14:20', arr: '17:50' }, 'CI173': { from: 'KIX', to: 'TPE', dep: '19:05', arr: '21:35' }, 'BR132': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:55' }, 'BR131': { from: 'KIX', to: 'TPE', dep: '13:10', arr: '15:35' }, 'BR130': { from: 'TPE', to: 'KIX', dep: '12:30', arr: '16:00' }, 'BR129': { from: 'KIX', to: 'TPE', dep: '18:30', arr: '20:50' }, 'IT210': { from: 'TPE', to: 'KIX', dep: '07:00', arr: '10:25' }, 'IT211': { from: 'KIX', to: 'TPE', dep: '11:15', arr: '13:30' }, 'JL816': { from: 'TPE', to: 'KIX', dep: '12:15', arr: '15:45' }, 'JL813': { from: 'KIX', to: 'TPE', dep: '09:10', arr: '11:30' } };
                 const expenseCategories = [ { id: 'food', label: 'Food', icon: 'fa-utensils', color: 'bg-orange-100 text-orange-500' }, { id: 'transport', label: 'Transport', icon: 'fa-train-subway', color: 'bg-blue-100 text-blue-500' }, { id: 'shopping', label: 'Shopping', icon: 'fa-bag-shopping', color: 'bg-purple-100 text-purple-500' }, { id: 'sightseeing', label: 'Sightseeing', icon: 'fa-camera', color: 'bg-red-100 text-red-500' }, { id: 'stay', label: 'Stay', icon: 'fa-bed', color: 'bg-indigo-100 text-indigo-500' }, { id: 'other', label: 'Other', icon: 'fa-receipt', color: 'bg-gray-100 text-gray-500' } ];
 
-                const tripDocRef = doc(db, 'trips', 'shared_trip_v1');
+                const tripDocRef = doc(db, 'trips', 'shared_trip_randall_final_v2');
 
                 const initSync = async () => {
                     try {
@@ -575,7 +591,8 @@
                                 remoteUpdateLock.value = true;
                                 const data = docSnap.data();
                                 travelers.value = data.travelers || defaultTravelers;
-                                days.value = data.days || defaultDays;
+                                // Apply repair on sync
+                                days.value = ensureValidData(data.days);
                                 expenses.value = data.expenses || [];
                                 exchangeRate.value = data.exchangeRate || 0.22;
                                 theme.value = data.theme || 'default';
@@ -625,8 +642,16 @@
                         setTimeout(() => isSyncing.value = false, 500);
                     }
                 };
+                
+                // Watch for days changes to prevent index out of bounds
+                watch(days, (newDays) => {
+                    if (currentDayIndex.value >= newDays.length) {
+                        currentDayIndex.value = 0;
+                    }
+                    saveToFirebase();
+                }, { deep: true });
 
-                watch([travelers, days, expenses, exchangeRate, theme], () => {
+                watch([travelers, expenses, exchangeRate, theme], () => {
                     saveToFirebase();
                 }, { deep: true });
 
