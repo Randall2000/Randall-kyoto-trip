@@ -164,7 +164,6 @@
                     <span v-else>Loading weather...</span>
                 </div>
 
-                <!-- Date Selector -->
                 <div class="flex overflow-x-auto gap-4 px-6 pb-2 no-scrollbar snap-x-mandatory mb-4">
                     <button 
                         v-for="(day, index) in days" 
@@ -363,7 +362,6 @@
                         <div class="space-y-3">
                              <div v-for="(loc, index) in mapLocations" :key="loc.id" class="flex items-center justify-between group p-2 hover:bg-jp-surface rounded-lg transition border border-transparent hover:border-jp-border">
                                 <div class="flex items-center gap-4 overflow-hidden cursor-pointer" @click="flyToLocation(loc)">
-                                    <!-- Use index + 1 for numbered marker in list to match map -->
                                     <div class="w-6 h-6 rounded-full bg-jp-text text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-sm">{{ index + 1 }}</div>
                                     <div class="overflow-hidden"><p class="font-medium text-sm text-jp-text truncate">{{ loc.location }}</p><p class="text-xs text-jp-gray">{{ loc.time }} · {{ loc.title }}</p></div>
                                 </div>
@@ -543,7 +541,13 @@
                 const remoteUpdateLock = ref(false);
                 const errorMessage = ref('');
 
-                const getFixedDate = (offset = 0) => { const d = new Date('2025-12-11'); d.setDate(d.getDate() + offset); return d.toISOString().split('T')[0]; };
+                // Use the correct date for the itinerary (Dec 11, 2025)
+                const getFixedDate = (offset = 0) => { 
+                    const d = new Date('2025-12-11');
+                    d.setDate(d.getDate() + offset); 
+                    return d.toISOString().split('T')[0]; 
+                };
+                
                 const activeTab = ref('itinerary');
                 const showEventModal = ref(false);
                 const showExpenseModal = ref(false);
@@ -561,6 +565,9 @@
                 const mapInstance = ref(null);
                 const markers = ref([]);
                 const userMarker = ref(null);
+                
+                // Add marked to the setup scope so it can be returned
+                const marked = window.marked;
 
                 const defaultTravelers = ['Me', 'You'];
                 const defaultDays = [ 
@@ -609,9 +616,10 @@
                     }
                 ];
                 
-                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v5')) || defaultTravelers);
-                const days = ref(JSON.parse(localStorage.getItem('jp_days_v5')) || defaultDays);
-                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v5')) || []);
+                // Use v7 to force refresh for new itinerary
+                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v7')) || defaultTravelers);
+                const days = ref(JSON.parse(localStorage.getItem('jp_days_v7')) || defaultDays);
+                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v7')) || []);
 
                 const eventForm = ref({ id: null, title: '', time: '', location: '', lat: null, lng: null, category: 'sightseeing', note: '' });
                 const expenseForm = ref({ id: null, amount: '', title: '', payer: travelers.value[0], date: '', category: 'food' });
@@ -619,7 +627,8 @@
                 const flightDB = { 'IT212': { from: 'TPE', to: 'KIX', dep: '14:40', arr: '17:55' }, 'JX820': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:50' }, 'JX821': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:15' }, 'CI156': { from: 'TPE', to: 'KIX', dep: '08:10', arr: '11:40' }, 'CI157': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:20' }, 'CI172': { from: 'TPE', to: 'KIX', dep: '14:20', arr: '17:50' }, 'CI173': { from: 'KIX', to: 'TPE', dep: '19:05', arr: '21:35' }, 'BR132': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:55' }, 'BR131': { from: 'KIX', to: 'TPE', dep: '13:10', arr: '15:35' }, 'BR130': { from: 'TPE', to: 'KIX', dep: '12:30', arr: '16:00' }, 'BR129': { from: 'KIX', to: 'TPE', dep: '18:30', arr: '20:50' }, 'IT210': { from: 'TPE', to: 'KIX', dep: '07:00', arr: '10:25' }, 'IT211': { from: 'KIX', to: 'TPE', dep: '11:15', arr: '13:30' }, 'JL816': { from: 'TPE', to: 'KIX', dep: '12:15', arr: '15:45' }, 'JL813': { from: 'KIX', to: 'TPE', dep: '09:10', arr: '11:30' } };
                 const expenseCategories = [ { id: 'food', label: 'Food', icon: 'fa-utensils', color: 'bg-orange-100 text-orange-500' }, { id: 'transport', label: 'Transport', icon: 'fa-train-subway', color: 'bg-blue-100 text-blue-500' }, { id: 'shopping', label: 'Shopping', icon: 'fa-bag-shopping', color: 'bg-purple-100 text-purple-500' }, { id: 'sightseeing', label: 'Sightseeing', icon: 'fa-camera', color: 'bg-red-100 text-red-500' }, { id: 'stay', label: 'Stay', icon: 'fa-bed', color: 'bg-indigo-100 text-indigo-500' }, { id: 'other', label: 'Other', icon: 'fa-receipt', color: 'bg-gray-100 text-gray-500' } ];
 
-                const tripDocRef = doc(db, 'trips', 'shared_trip_randall_final_v2');
+                // Changed document ID to force a fresh start with new data
+                const tripDocRef = doc(db, 'trips', 'shared_trip_randall_final_v3');
 
                 const initSync = async () => {
                     try {
