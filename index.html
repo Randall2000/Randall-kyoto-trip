@@ -41,8 +41,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <!-- Markdown Parser for AI responses -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <!-- 5. Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -157,14 +155,15 @@
             <div v-if="activeTab === 'itinerary'" class="pb-28">
                 <div class="px-6 py-4 flex items-center justify-between text-xs text-jp-gray">
                     <span>KYOTO, JAPAN</span>
-                    <!-- Weather Display (Simulated Real-Time) -->
+                    <!-- Weather Header -->
                     <span v-if="currentKyotoWeather" class="flex items-center gap-1">
                         <i :class="getWeatherIcon(currentKyotoWeather.code)" class="text-sm"></i>
                         {{ currentKyotoWeather.temp }}°C (Forecast)
                     </span>
-                    <span v-else>Loading weather...</span>
+                    <span v-else class="text-jp-gray/50 animate-pulse">Loading weather...</span>
                 </div>
 
+                <!-- Date Selector -->
                 <div class="flex overflow-x-auto gap-4 px-6 pb-2 no-scrollbar snap-x-mandatory mb-4">
                     <button 
                         v-for="(day, index) in days" 
@@ -482,7 +481,7 @@
                         <h3 class="font-medium text-lg text-jp-text">Settings</h3>
                         <button @click="showSettings = false" class="w-8 h-8 rounded-full bg-jp-bg flex items-center justify-center text-jp-gray"><i class="fa-solid fa-xmark"></i></button>
                     </div>
-                    
+
                     <div class="mb-6">
                         <label class="text-[10px] uppercase tracking-widest text-jp-gray block mb-2">Theme Style</label>
                         <div class="grid grid-cols-3 gap-2">
@@ -553,7 +552,7 @@
                 const remoteUpdateLock = ref(false);
                 const errorMessage = ref('');
 
-                // Use the correct date for the itinerary (Dec 11, 2025)
+                // Fixed date to Dec 11, 2025
                 const getFixedDate = (offset = 0) => { 
                     const d = new Date('2025-12-11');
                     d.setDate(d.getDate() + offset); 
@@ -630,10 +629,10 @@
                     }
                 ];
                 
-                // Use v10 to force refresh for new itinerary
-                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v10')) || defaultTravelers);
-                const days = ref(JSON.parse(localStorage.getItem('jp_days_v10')) || defaultDays);
-                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v10')) || []);
+                // Use v11 to force refresh for new itinerary
+                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v11')) || defaultTravelers);
+                const days = ref(JSON.parse(localStorage.getItem('jp_days_v11')) || defaultDays);
+                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v11')) || []);
 
                 const eventForm = ref({ id: null, title: '', time: '', location: '', lat: null, lng: null, category: 'sightseeing', note: '' });
                 const expenseForm = ref({ id: null, amount: '', title: '', payer: travelers.value[0], date: '', category: 'food' });
@@ -642,7 +641,7 @@
                 const expenseCategories = [ { id: 'food', label: 'Food', icon: 'fa-utensils', color: 'bg-orange-100 text-orange-500' }, { id: 'transport', label: 'Transport', icon: 'fa-train-subway', color: 'bg-blue-100 text-blue-500' }, { id: 'shopping', label: 'Shopping', icon: 'fa-bag-shopping', color: 'bg-purple-100 text-purple-500' }, { id: 'sightseeing', label: 'Sightseeing', icon: 'fa-camera', color: 'bg-red-100 text-red-500' }, { id: 'stay', label: 'Stay', icon: 'fa-bed', color: 'bg-indigo-100 text-indigo-500' }, { id: 'other', label: 'Other', icon: 'fa-receipt', color: 'bg-gray-100 text-gray-500' } ];
 
                 // Changed document ID to force a fresh start with new data
-                const tripDocRef = doc(db, 'trips', 'shared_trip_randall_final_v10');
+                const tripDocRef = doc(db, 'trips', 'shared_trip_randall_final_v11');
 
                 const initSync = async () => {
                     try {
@@ -840,6 +839,7 @@
 
                 onMounted(() => {
                     initSync(); // Start sync on mount
+                    fetchWeather(); // Call fetchWeather on mount
                 });
 
                 return {
