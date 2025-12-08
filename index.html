@@ -169,6 +169,7 @@
                     <span v-else>Loading weather...</span>
                 </div>
 
+                <!-- Date Selector -->
                 <div class="flex overflow-x-auto gap-4 px-6 pb-2 no-scrollbar snap-x-mandatory mb-4">
                     <button 
                         v-for="(day, index) in days" 
@@ -367,6 +368,7 @@
                         <div class="space-y-3">
                              <div v-for="(loc, index) in mapLocations" :key="loc.id" class="flex items-center justify-between group p-2 hover:bg-jp-surface rounded-lg transition border border-transparent hover:border-jp-border">
                                 <div class="flex items-center gap-4 overflow-hidden cursor-pointer" @click="flyToLocation(loc)">
+                                    <!-- Use index + 1 for numbered marker in list to match map -->
                                     <div class="w-6 h-6 rounded-full bg-jp-text text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-sm">{{ index + 1 }}</div>
                                     <div class="overflow-hidden"><p class="font-medium text-sm text-jp-text truncate">{{ loc.location }}</p><p class="text-xs text-jp-gray">{{ loc.time }} · {{ loc.title }}</p></div>
                                 </div>
@@ -382,7 +384,7 @@
         <!-- FAB -->
         <button v-if="activeTab !== 'map'" @click="openAddModal" class="absolute bottom-24 right-6 w-14 h-14 bg-jp-text text-jp-bg rounded-full shadow-float flex items-center justify-center text-xl transition-transform hover:scale-105 active:scale-95 z-30"><i class="fa-solid fa-plus not-italic"></i></button>
 
-        <!-- Bottom Nav (Solid Background) -->
+        <!-- Bottom Nav (Updated Style) -->
         <nav class="absolute bottom-0 w-full h-20 bg-jp-surface border-t border-jp-border flex justify-around items-start pt-4 z-[800]">
             <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
                 <i class="fa-solid fa-calendar-days text-lg mb-1"></i>
@@ -477,28 +479,14 @@
             </div>
         </transition>
         
-        <!-- Settings Modal (Updated with Gemini Key) -->
         <transition name="fade">
             <div v-if="showSettings" class="absolute inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
-                <div class="bg-jp-surface w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-jp-border max-h-[80vh] overflow-y-auto">
+                <div class="bg-jp-surface w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-jp-border">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="font-medium text-lg text-jp-text">Settings</h3>
                         <button @click="showSettings = false" class="w-8 h-8 rounded-full bg-jp-bg flex items-center justify-center text-jp-gray"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     
-                    <!-- Gemini API Key Input -->
-                    <div class="mb-6">
-                        <label class="text-[10px] uppercase tracking-widest text-jp-gray block mb-2 flex justify-between">
-                            <span>Gemini API Key</span>
-                            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-jp-accent underline">Get Key</a>
-                        </label>
-                        <div class="flex items-center bg-jp-bg rounded-lg px-4 py-2 border border-jp-border">
-                            <i class="fa-solid fa-key text-jp-gray text-sm mr-2"></i>
-                            <input v-model="geminiApiKey" type="password" placeholder="Paste your AI Studio Key" class="flex-1 bg-transparent focus:outline-none font-mono text-jp-text text-sm">
-                        </div>
-                        <p class="text-[10px] text-jp-gray/60 mt-1">Key is saved locally in your browser.</p>
-                    </div>
-
                     <div class="mb-6">
                         <label class="text-[10px] uppercase tracking-widest text-jp-gray block mb-2">Theme Style</label>
                         <div class="grid grid-cols-3 gap-2">
@@ -593,12 +581,6 @@
                 const mapInstance = ref(null);
                 const markers = ref([]);
                 const userMarker = ref(null);
-                
-                // AI related state
-                const geminiApiKey = ref(localStorage.getItem('jp_gemini_key') || '');
-                const aiInput = ref('');
-                const chatHistory = ref([]);
-                const isAiLoading = ref(false);
                 
                 // Add marked to the setup scope so it can be returned
                 const marked = window.marked;
@@ -787,10 +769,6 @@
                 
                 watch(activeTab, (newTab) => { 
                     if (newTab === 'map') setTimeout(() => { initMap(); if(mapInstance.value) mapInstance.value.invalidateSize(); updateMapMarkers(); }, 100); 
-                    if (newTab === 'ai') nextTick(() => {
-                         const container = document.getElementById('chat-container');
-                         if(container) container.scrollTop = container.scrollHeight;
-                    });
                 });
                 watch(currentDayIndex, () => { if (activeTab.value === 'map') updateMapMarkers(); });
                 const locateUser = () => { if (!navigator.geolocation) return alert("Geolocation not supported"); navigator.geolocation.getCurrentPosition((pos) => { const lat = pos.coords.latitude, lng = pos.coords.longitude; if (userMarker.value) mapInstance.value.removeLayer(userMarker.value); const pulseIcon = L.divIcon({ className: 'user-location-marker', iconSize: [20, 20] }); userMarker.value = L.marker([lat, lng], { icon: pulseIcon }).addTo(mapInstance.value); mapInstance.value.flyTo([lat, lng], 15); }, () => { alert("Unable to retrieve location"); }); };
@@ -804,7 +782,7 @@
                 const sortedExpenses = computed(() => [...expenses.value].sort((a, b) => new Date(b.date) - new Date(a.date)));
                 const totalExpense = computed(() => expenses.value.reduce((sum, item) => sum + item.amount, 0));
                 const mapLocations = computed(() => currentDayEvents.value.filter(e => e.location));
-                const getTabTitle = computed(() => { if (activeTab.value === 'itinerary') return 'Kyoto Plan'; if (activeTab.value === 'expenses') return 'Expenses'; if(activeTab.value === 'ai') return 'AI Guide'; return 'Navigation'; });
+                const getTabTitle = computed(() => { if (activeTab.value === 'itinerary') return 'Kyoto Plan'; if (activeTab.value === 'expenses') return 'Expenses'; return 'Navigation'; });
                 const debts = computed(() => { if (travelers.value.length === 0) return []; const balances = {}; travelers.value.forEach(p => balances[p] = 0); const total = totalExpense.value; const perPerson = total / travelers.value.length; expenses.value.forEach(exp => { if (balances[exp.payer] !== undefined) balances[exp.payer] += exp.amount; }); travelers.value.forEach(p => balances[p] -= perPerson); let debtors = [], creditors = []; for (const [person, amount] of Object.entries(balances)) { if (amount < -1) debtors.push({ person, amount }); if (amount > 1) creditors.push({ person, amount }); } debtors.sort((a, b) => a.amount - b.amount); creditors.sort((a, b) => b.amount - a.amount); const transactions = []; let i = 0, j = 0; while (i < debtors.length && j < creditors.length) { const debtor = debtors[i]; const creditor = creditors[j]; const amount = Math.min(Math.abs(debtor.amount), creditor.amount); transactions.push({ from: debtor.person, to: creditor.person, amount: amount }); debtor.amount += amount; creditor.amount -= amount; if (Math.abs(debtor.amount) < 1) i++; if (creditor.amount < 1) j++; } return transactions; });
                 const getDayName = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
                 const formatDateShort = (dateStr) => { const d = new Date(dateStr); return `${d.getMonth() + 1}/${d.getDate()}`; };
@@ -843,72 +821,12 @@
                     });
                 };
 
-                // --- Gemini Logic ---
-                const sendAiMessage = async () => {
-                    if (!aiInput.value.trim() || !geminiApiKey.value) return;
-
-                    const userMsg = aiInput.value;
-                    chatHistory.value.push({ role: 'user', content: userMsg });
-                    aiInput.value = '';
-                    isAiLoading.value = true;
-
-                    try {
-                        const apiKey = geminiApiKey.value;
-                        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-                        
-                        const itineraryContext = JSON.stringify(days.value);
-                        const expenseContext = JSON.stringify(expenses.value);
-                        
-                        const systemPrompt = `You are a helpful, knowledgeable, and friendly travel guide for a trip to Kyoto, Japan. 
-                        Current Itinerary Context: ${itineraryContext}. 
-                        Current Expense Context: ${expenseContext}.
-                        
-                        Answer the user's questions about Kyoto, provide recommendations for food, transport, or etiquette based on their itinerary. 
-                        If they ask about their plans, use the provided context. 
-                        Keep answers concise and formatted in Markdown. 
-                        Use emojis to be friendly.`;
-
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                contents: [
-                                    {
-                                        role: 'user',
-                                        parts: [{ text: systemPrompt + "\n\nUser Question: " + userMsg }]
-                                    }
-                                ]
-                            })
-                        });
-
-                        const data = await response.json();
-                        
-                        if (data.error) {
-                            throw new Error(data.error.message);
-                        }
-
-                        const aiResponse = data.candidates[0].content.parts[0].text;
-                        chatHistory.value.push({ role: 'model', content: aiResponse });
-
-                    } catch (error) {
-                        console.error("Gemini Error:", error);
-                        chatHistory.value.push({ role: 'model', content: "⚠️ Sorry, I encountered an error: " + error.message });
-                    } finally {
-                        isAiLoading.value = false;
-                        nextTick(() => {
-                             const container = document.getElementById('chat-container');
-                             if(container) container.scrollTop = container.scrollHeight;
-                        });
-                    }
-                };
-
                 onMounted(() => {
                     initSync(); // Start sync on mount
                 });
 
                 return {
-                    activeTab, days, currentDayIndex, currentDayEvents, travelers, expenses, sortedExpenses, totalExpense, debts, showEventModal, showExpenseModal, showSettings, eventForm, expenseForm, isEditing, mapLocations, confirmState, weatherData, currentKyotoWeather, getEventWeather, getWeatherIcon, isUrl, getDayName, formatDateShort, getCategoryColor, getCategoryIcon, getPaidAmount, getTabTitle, addDay, openAddModal, editEvent, saveEvent, deleteEvent, triggerDeleteEvent, closeEventModal, saveExpense, triggerDeleteExpense, clearExpenses, addTraveler, removeTraveler, triggerReset, resetAllData, executeConfirm, exchangeRate, expenseCurrency, locateUser, flyToLocation, openGoogleMaps, mapSplit, startResize, autoFillFlight, flightExpanded, toggleFlight, expenseCategories, getExpenseCategoryIcon, getExpenseCategoryColor, theme, changeTheme, isOnline, isSyncing, errorMessage, triggerDeleteDay, marked,
-                    geminiApiKey, aiInput, chatHistory, isAiLoading, sendAiMessage
+                    activeTab, days, currentDayIndex, currentDayEvents, travelers, expenses, sortedExpenses, totalExpense, debts, showEventModal, showExpenseModal, showSettings, eventForm, expenseForm, isEditing, mapLocations, confirmState, weatherData, currentKyotoWeather, getEventWeather, getWeatherIcon, isUrl, getDayName, formatDateShort, getCategoryColor, getCategoryIcon, getPaidAmount, getTabTitle, addDay, openAddModal, editEvent, saveEvent, deleteEvent, triggerDeleteEvent, closeEventModal, saveExpense, triggerDeleteExpense, clearExpenses, addTraveler, removeTraveler, triggerReset, resetAllData, executeConfirm, exchangeRate, expenseCurrency, locateUser, flyToLocation, openGoogleMaps, mapSplit, startResize, autoFillFlight, flightExpanded, toggleFlight, expenseCategories, getExpenseCategoryIcon, getExpenseCategoryColor, theme, changeTheme, isOnline, isSyncing, errorMessage, triggerDeleteDay, marked
                 };
             }
         }).mount('#app');
