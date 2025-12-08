@@ -4,20 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>京都旅人 Kyoto Trip (Shared)</title>
-    <!-- Browser Tab Icon (Favicon) - Uses the colored system emoji -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛩️</text></svg>">
     
-    <!-- --- PWA / Mobile Web App Settings --- -->
-    <!-- 1. iOS/Android Home Screen Icon -->
-    <!-- We give this an ID so we can inject a generated PNG into it via JavaScript -->
-    <link id="app-icon" rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23FDFBF7%22/><text x=%2250%25%22 y=%2255%25%22 font-size=%2280%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22>⛩️</text></svg>">
-    
-    <!-- 2. Web App Mode (Hides browser UI when added to home screen) -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Kyoto Trip">
-    <!-- ------------------------------------- -->
-
     <!-- 1. Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -37,6 +25,9 @@
                             blue: 'var(--jp-blue)',
                             border: 'var(--jp-border)'
                         }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
                     }
                 }
             }
@@ -50,6 +41,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Markdown Parser for AI responses -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <!-- 5. Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -93,7 +86,7 @@
 
         body {
             font-family: 'Noto Sans JP', 'Noto Sans TC', sans-serif;
-            background-color: #f3f4f6; /* Light gray background for body */
+            background-color: #f3f4f6;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease;
         }
@@ -112,10 +105,15 @@
         .accordion-enter-from, .accordion-leave-to { max-height: 0; opacity: 0; }
         .shadow-soft { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
         .shadow-float { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 
         #map-container { width: 100%; z-index: 0; }
-        
+        .ticket-dash {
+            background-image: linear-gradient(to right, var(--jp-border) 50%, rgba(255,255,255,0) 0%);
+            background-position: bottom;
+            background-size: 10px 1px;
+            background-repeat: repeat-x;
+        }
+
         .user-location-marker {
             background-color: #3B82F6;
             border: 2px solid white;
@@ -142,7 +140,7 @@
                 <span v-if="!isOnline" class="text-[10px] bg-red-100 text-red-500 px-1 rounded ml-1 font-bold">Offline</span>
                 <span v-if="isSyncing" class="text-[10px] text-jp-accent ml-1 animate-pulse"><i class="fa-solid fa-rotate"></i></span>
             </h1>
-            <button @click="showSettings = true" class="text-jp-gray hover:text-jp-accent transition mb-1">
+            <button @click="showSettings = true" class="text-jp-gray hover:text-jp-accent transition mb-1 relative">
                 <i class="fa-solid fa-sliders text-lg"></i>
             </button>
         </header>
@@ -166,6 +164,7 @@
                     <span v-else>Loading weather...</span>
                 </div>
 
+                <!-- Date Selector -->
                 <div class="flex overflow-x-auto gap-4 px-6 pb-2 no-scrollbar snap-x-mandatory mb-4">
                     <button 
                         v-for="(day, index) in days" 
@@ -185,7 +184,8 @@
                 </div>
 
                 <div class="px-6 space-y-6">
-                    <div v-if="currentDayIndex === 0 && days[0].flight" class="mb-2">
+                    <!-- FLIGHT CARD: FIRST DAY -->
+                    <div v-if="currentDayIndex === 0" class="mb-2">
                         <div class="bg-jp-surface rounded-2xl shadow-sm border border-jp-border overflow-hidden relative group transition-all">
                             <div class="h-2 bg-jp-blue w-full"></div>
                             <div @click="toggleFlight(0)" class="p-4 flex justify-between items-center cursor-pointer bg-jp-surface z-10 relative">
@@ -261,8 +261,8 @@
                                     <!-- Note / Link Display -->
                                     <div v-if="event.note" class="mt-1">
                                         <!-- Subtle Link Style -->
-                                        <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-gray-400/80 hover:text-jp-accent transition mt-1 py-1">
-                                            <i class="fa-solid fa-link"></i> Open Link
+                                        <a v-if="isUrl(event.note)" :href="event.note" target="_blank" @click.stop class="inline-flex items-center gap-1.5 text-[10px] text-jp-gray/70 hover:text-jp-accent transition mt-1 py-1">
+                                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟連結
                                         </a>
                                         <p v-else class="text-xs text-jp-gray/80 bg-jp-bg p-2 rounded-lg mt-1 border border-jp-border">
                                             <i class="fa-regular fa-note-sticky mr-1"></i> {{ event.note }}
@@ -273,7 +273,17 @@
                         </div>
                     </div>
 
-                    <div v-if="currentDayIndex === days.length - 1 && days[currentDayIndex].flight" class="mt-6 mb-4">
+                    <!-- DELETE DAY BUTTON -->
+                    <div v-if="days.length > 1" class="pt-4 pb-2 flex justify-center">
+                        <button 
+                            @click="triggerDeleteDay(currentDayIndex)" 
+                            class="text-xs text-jp-gray/50 hover:text-jp-red flex items-center gap-1.5 transition-colors border border-dashed border-jp-gray/30 px-3 py-1.5 rounded-full"
+                        >
+                            <i class="fa-regular fa-trash-can"></i> 刪除 Day {{ currentDayIndex + 1 }} ({{ getDayName(days[currentDayIndex].date) }})
+                        </button>
+                    </div>
+
+                    <div v-if="currentDayIndex === days.length - 1" class="mt-6 mb-4">
                          <div class="bg-jp-surface rounded-2xl shadow-sm border border-jp-border overflow-hidden relative group transition-all">
                             <div class="h-2 bg-jp-red w-full"></div>
                             <div @click="toggleFlight(currentDayIndex)" class="p-4 flex justify-between items-center cursor-pointer bg-jp-surface z-10 relative">
@@ -297,10 +307,11 @@
                             <div class="absolute -left-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                             <div class="absolute -right-2 top-1/2 w-4 h-4 bg-jp-bg rounded-full shadow-inner z-20"></div>
                         </div>
-                        <a href="https://guest-ui.west-qr.com/#/packages/login/index" target="_blank" class="mt-3 block bg-jp-surface border border-jp-red/30 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition active:scale-98 group">
+                        <!-- JR WEST LINK FOR LAST DAY -->
+                        <a href="https://guest-ui.west-qr.com/#/packages/login/index" target="_blank" class="mt-3 block bg-jp-surface border border-jp-blue/30 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition active:scale-98 group">
                             <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-red-500/10 text-jp-red flex items-center justify-center"><i class="fa-solid fa-train-subway"></i></div>
-                                <div><div class="text-xs text-jp-red font-bold tracking-wider">JR WEST</div><div class="text-sm font-bold text-jp-text">Haruka 訂位 / 選位</div></div>
+                                <div class="w-8 h-8 rounded-full bg-blue-500/10 text-jp-blue flex items-center justify-center"><i class="fa-solid fa-train-subway"></i></div>
+                                <div><div class="text-xs text-jp-blue font-bold tracking-wider">JR WEST</div><div class="text-sm font-bold text-jp-text">Haruka 訂位 / 選位</div></div>
                             </div>
                             <i class="fa-solid fa-arrow-up-right-from-square text-jp-gray text-xs mr-1"></i>
                         </a>
@@ -350,9 +361,10 @@
                     <div class="px-6 pb-20 overflow-y-auto no-scrollbar flex-1">
                         <h3 class="text-sm font-bold text-jp-text uppercase tracking-widest mb-4 mt-2">Locations (Today)</h3>
                         <div class="space-y-3">
-                             <div v-for="loc in mapLocations" :key="loc.id" class="flex items-center justify-between group p-2 hover:bg-jp-surface rounded-lg transition border border-transparent hover:border-jp-border">
+                             <div v-for="(loc, index) in mapLocations" :key="loc.id" class="flex items-center justify-between group p-2 hover:bg-jp-surface rounded-lg transition border border-transparent hover:border-jp-border">
                                 <div class="flex items-center gap-4 overflow-hidden cursor-pointer" @click="flyToLocation(loc)">
-                                    <div class="w-2 h-2 rounded-full bg-jp-accent flex-shrink-0"></div>
+                                    <!-- Use index + 1 for numbered marker in list to match map -->
+                                    <div class="w-6 h-6 rounded-full bg-jp-text text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-sm">{{ index + 1 }}</div>
                                     <div class="overflow-hidden"><p class="font-medium text-sm text-jp-text truncate">{{ loc.location }}</p><p class="text-xs text-jp-gray">{{ loc.time }} · {{ loc.title }}</p></div>
                                 </div>
                                 <button @click="openGoogleMaps(loc.location)" class="w-8 h-8 rounded-full border border-jp-border flex items-center justify-center text-jp-gray hover:bg-jp-text hover:text-jp-bg transition flex-shrink-0"><i class="fa-solid fa-location-arrow text-xs"></i></button>
@@ -367,20 +379,11 @@
         <!-- FAB -->
         <button v-if="activeTab !== 'map'" @click="openAddModal" class="absolute bottom-24 right-6 w-14 h-14 bg-jp-text text-jp-bg rounded-full shadow-float flex items-center justify-center text-xl transition-transform hover:scale-105 active:scale-95 z-30"><i class="fa-solid fa-plus not-italic"></i></button>
 
-        <!-- Bottom Nav (Updated Style) -->
+        <!-- Bottom Nav -->
         <nav class="absolute bottom-0 w-full h-20 bg-jp-surface border-t border-jp-border flex justify-around items-start pt-4 z-[800]">
-            <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
-                <i class="fa-solid fa-calendar-days text-lg mb-1"></i>
-                <span class="text-[9px] tracking-wider uppercase font-medium">Plan</span>
-            </button>
-            <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
-                <i class="fa-solid fa-wallet text-lg mb-1"></i>
-                <span class="text-[9px] tracking-wider uppercase font-medium">Wallet</span>
-            </button>
-            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group">
-                <i class="fa-solid fa-map text-lg mb-1"></i>
-                <span class="text-[9px] tracking-wider uppercase font-medium">Map</span>
-            </button>
+            <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-calendar-days text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Plan</span></button>
+            <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-wallet text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Wallet</span></button>
+            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-jp-text' : 'text-gray-300'" class="flex flex-col items-center w-16 transition-colors duration-300 group"><i class="fa-solid fa-map text-lg mb-1"></i><span class="text-[9px] tracking-wider uppercase font-medium">Map</span></button>
         </nav>
 
         <!-- Modals -->
@@ -513,7 +516,7 @@
     </div>
 
     <script type="module">
-        // --- FIREBASE SETTINGS (UPDATED: 2025-12-06) ---
+        // --- FIREBASE SETTINGS ---
         const firebaseConfig = {
             apiKey: "AIzaSyCPQtJFQ6qSb5oUNo_Zk7UQbilkj6_jvos",
             authDomain: "kyoto-trip-free.firebaseapp.com",
@@ -556,33 +559,64 @@
                 const theme = ref('default');
                 const weatherData = ref(null);
                 const mapInstance = ref(null);
-                const markersLayer = ref(null); // Changed: Use LayerGroup for better management
+                const markers = ref([]);
                 const userMarker = ref(null);
 
                 const defaultTravelers = ['Me', 'You'];
-                const defaultDays = [ { date: getFixedDate(0), flight: { number: '', time: '', from: 'TPE', to: 'KIX', arrivalDate: getFixedDate(0), arrivalTime: '' }, events: [ { id: 1, time: '14:00', title: 'Check-in Hotel', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }, { id: 2, time: '16:00', title: '清水寺 Kiyomizu-dera', location: 'Kiyomizu-dera', lat: 34.994856, lng: 135.785046, category: 'sightseeing', note: 'https://www.kiyomizudera.or.jp/en/' } ] }, { date: getFixedDate(1), flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(1), arrivalTime: '' }, events: [ { id: 4, time: '10:00', title: '嵐山竹林', location: 'Arashiyama Bamboo Grove', lat: 35.017, lng: 135.670, category: 'sightseeing', note: '' }, { id: 5, time: '19:00', title: '燒肉弘', location: 'Yakiniku Hiro', lat: 35.006, lng: 135.770, category: 'food', note: 'Booked via TableCheck' } ] } ];
+                const defaultDays = [ 
+                    // DAY 1: 12/11
+                    { 
+                        date: getFixedDate(0), 
+                        flight: { number: 'IT212', time: '14:40', from: 'TPE', to: 'KIX', arrivalDate: getFixedDate(0), arrivalTime: '17:55' }, 
+                        events: [ 
+                            { id: 1, time: '20:30', title: '京都車站 Kyoto Station', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' },
+                            { id: 2, time: '21:30', title: 'Ibis Hotel', location: 'Ibis Styles Kyoto Station', lat: 34.984, lng: 135.759, category: 'stay', note: 'Check-in' } 
+                        ] 
+                    }, 
+                    // DAY 2: 12/12
+                    { 
+                        date: getFixedDate(1), 
+                        flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(1), arrivalTime: '' }, 
+                        events: [ 
+                            { id: 3, time: '08:30', title: 'Ibis Hotel', location: 'Ibis Styles Kyoto Station', lat: 34.984, lng: 135.759, category: 'stay', note: 'Departure' },
+                            { id: 4, time: '08:45', title: 'JR東海 京都站八條東口', location: 'Kyoto Station Hachijo East Exit', lat: 34.9845, lng: 135.7595, category: 'transport', note: '' },
+                            { id: 5, time: '10:00', title: '勝偉寺 Katsuo-ji', location: 'Katsuo-ji', lat: 34.867, lng: 135.491, category: 'sightseeing', note: 'Klook 電子票' },
+                            { id: 6, time: '12:45', title: '嵐山 Arashiyama', location: 'Arashiyama Bamboo Grove', lat: 35.0116, lng: 135.670, category: 'sightseeing', note: '' },
+                            { id: 7, time: '16:15', title: '金閣寺 Kinkaku-ji', location: 'Kinkaku-ji', lat: 35.0394, lng: 135.7292, category: 'sightseeing', note: '' },
+                            { id: 8, time: '17:30', title: 'JR 東海京都站', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }
+                        ] 
+                    },
+                    // DAY 3: 12/13
+                    { 
+                        date: getFixedDate(2), 
+                        flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(2), arrivalTime: '' }, 
+                        events: [ 
+                            { id: 9, time: '07:00', title: '京都車站 Kyoto Station', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' },
+                            { id: 10, time: '07:30', title: '清水寺 Kiyomizu-dera', location: 'Kiyomizu-dera', lat: 34.9949, lng: 135.7850, category: 'sightseeing', note: '' },
+                            { id: 11, time: '19:00', title: '六角ACE', location: 'Rokkaku ACE', lat: 35.0065, lng: 135.7630, category: 'food', note: '' }
+                        ] 
+                    },
+                    // DAY 4: 12/14
+                    { 
+                        date: getFixedDate(3), 
+                        flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(3), arrivalTime: '' }, 
+                        events: [ 
+                            { id: 12, time: '08:15', title: '京都站八條口巴士站', location: 'Kyoto Station Hachijo Exit', lat: 34.9845, lng: 135.7595, category: 'transport', note: '' },
+                            { id: 13, time: '10:20', title: '天橋立觀景台', location: 'Amanohashidate View Land', lat: 35.555, lng: 135.190, category: 'sightseeing', note: '' },
+                            { id: 14, time: '13:25', title: '伊根舟屋 Ine no Funaya', location: 'Ine no Funaya', lat: 35.675, lng: 135.290, category: 'sightseeing', note: '13:25-15:00' },
+                            { id: 15, time: '17:30', title: '京都站八條口', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }
+                        ] 
+                    }
+                ];
                 
-                // --- CRITICAL DATA REPAIR FUNCTION ---
-                // Ensures older data structures (missing flight info) don't crash the UI
-                const ensureValidData = (dataDays) => {
-                    if (!Array.isArray(dataDays) || dataDays.length === 0) return defaultDays;
-                    return dataDays.map(day => ({
-                        ...day,
-                        date: day.date || new Date().toISOString().split('T')[0],
-                        flight: day.flight || { number: '', time: '', from: '', to: '', arrivalDate: day.date, arrivalTime: '' },
-                        events: Array.isArray(day.events) ? day.events : []
-                    }));
-                };
-
-                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v3')) || defaultTravelers);
-                // Apply repair on load
-                const days = ref(ensureValidData(JSON.parse(localStorage.getItem('jp_days_v3'))));
-                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v3')) || []);
+                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v5')) || defaultTravelers);
+                const days = ref(JSON.parse(localStorage.getItem('jp_days_v5')) || defaultDays);
+                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v5')) || []);
 
                 const eventForm = ref({ id: null, title: '', time: '', location: '', lat: null, lng: null, category: 'sightseeing', note: '' });
                 const expenseForm = ref({ id: null, amount: '', title: '', payer: travelers.value[0], date: '', category: 'food' });
 
-                const flightDB = { 'JX820': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:50' }, 'JX821': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:15' }, 'CI156': { from: 'TPE', to: 'KIX', dep: '08:10', arr: '11:40' }, 'CI157': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:20' }, 'CI172': { from: 'TPE', to: 'KIX', dep: '14:20', arr: '17:50' }, 'CI173': { from: 'KIX', to: 'TPE', dep: '19:05', arr: '21:35' }, 'BR132': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:55' }, 'BR131': { from: 'KIX', to: 'TPE', dep: '13:10', arr: '15:35' }, 'BR130': { from: 'TPE', to: 'KIX', dep: '12:30', arr: '16:00' }, 'BR129': { from: 'KIX', to: 'TPE', dep: '18:30', arr: '20:50' }, 'IT210': { from: 'TPE', to: 'KIX', dep: '07:00', arr: '10:25' }, 'IT211': { from: 'KIX', to: 'TPE', dep: '11:15', arr: '13:30' }, 'JL816': { from: 'TPE', to: 'KIX', dep: '12:15', arr: '15:45' }, 'JL813': { from: 'KIX', to: 'TPE', dep: '09:10', arr: '11:30' } };
+                const flightDB = { 'IT212': { from: 'TPE', to: 'KIX', dep: '14:40', arr: '17:55' }, 'JX820': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:50' }, 'JX821': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:15' }, 'CI156': { from: 'TPE', to: 'KIX', dep: '08:10', arr: '11:40' }, 'CI157': { from: 'KIX', to: 'TPE', dep: '12:50', arr: '15:20' }, 'CI172': { from: 'TPE', to: 'KIX', dep: '14:20', arr: '17:50' }, 'CI173': { from: 'KIX', to: 'TPE', dep: '19:05', arr: '21:35' }, 'BR132': { from: 'TPE', to: 'KIX', dep: '08:30', arr: '11:55' }, 'BR131': { from: 'KIX', to: 'TPE', dep: '13:10', arr: '15:35' }, 'BR130': { from: 'TPE', to: 'KIX', dep: '12:30', arr: '16:00' }, 'BR129': { from: 'KIX', to: 'TPE', dep: '18:30', arr: '20:50' }, 'IT210': { from: 'TPE', to: 'KIX', dep: '07:00', arr: '10:25' }, 'IT211': { from: 'KIX', to: 'TPE', dep: '11:15', arr: '13:30' }, 'JL816': { from: 'TPE', to: 'KIX', dep: '12:15', arr: '15:45' }, 'JL813': { from: 'KIX', to: 'TPE', dep: '09:10', arr: '11:30' } };
                 const expenseCategories = [ { id: 'food', label: 'Food', icon: 'fa-utensils', color: 'bg-orange-100 text-orange-500' }, { id: 'transport', label: 'Transport', icon: 'fa-train-subway', color: 'bg-blue-100 text-blue-500' }, { id: 'shopping', label: 'Shopping', icon: 'fa-bag-shopping', color: 'bg-purple-100 text-purple-500' }, { id: 'sightseeing', label: 'Sightseeing', icon: 'fa-camera', color: 'bg-red-100 text-red-500' }, { id: 'stay', label: 'Stay', icon: 'fa-bed', color: 'bg-indigo-100 text-indigo-500' }, { id: 'other', label: 'Other', icon: 'fa-receipt', color: 'bg-gray-100 text-gray-500' } ];
 
                 const tripDocRef = doc(db, 'trips', 'shared_trip_randall_final_v2');
@@ -596,8 +630,7 @@
                                 remoteUpdateLock.value = true;
                                 const data = docSnap.data();
                                 travelers.value = data.travelers || defaultTravelers;
-                                // Apply repair on sync
-                                days.value = ensureValidData(data.days);
+                                days.value = data.days || defaultDays;
                                 expenses.value = data.expenses || [];
                                 exchangeRate.value = data.exchangeRate || 0.22;
                                 theme.value = data.theme || 'default';
@@ -647,26 +680,21 @@
                         setTimeout(() => isSyncing.value = false, 500);
                     }
                 };
-                
-                // Watch for days changes to prevent index out of bounds
-                watch(days, (newDays) => {
-                    if (currentDayIndex.value >= newDays.length) {
-                        currentDayIndex.value = 0;
-                    }
+
+                // Deep Watchers for all state
+                watch([travelers, days, expenses, exchangeRate, theme], () => {
                     saveToFirebase();
                 }, { deep: true });
 
-                watch([travelers, expenses, exchangeRate, theme], () => {
-                    saveToFirebase();
-                }, { deep: true });
-
+                // --- Regular Logic ---
                 const applyTheme = (t) => {
                     if (t === 'default') document.documentElement.removeAttribute('data-theme');
                     else document.documentElement.setAttribute('data-theme', t);
                     if (mapInstance.value && activeTab.value === 'map') initMap(true);
                 };
-                const changeTheme = (t) => theme.value = t;
+                const changeTheme = (t) => theme.value = t; // Watcher handles saving
 
+                // ... (Keep all existing helper functions identical) ...
                 const getExpenseCategoryIcon = (catId) => { const cat = expenseCategories.find(c => c.id === catId); return cat ? cat.icon : 'fa-receipt'; };
                 const getExpenseCategoryColor = (catId) => { const cat = expenseCategories.find(c => c.id === catId); return cat ? cat.color : 'bg-gray-100 text-gray-500'; };
                 const toggleFlight = (index) => { flightExpanded.value[index] = !flightExpanded.value[index]; };
@@ -682,77 +710,40 @@
                 const onResize = (e) => { const clientY = e.touches ? e.touches[0].clientY : e.clientY; const containerHeight = window.innerHeight; let percentage = (clientY / containerHeight) * 100; if (percentage < 20) percentage = 20; if (percentage > 85) percentage = 85; mapSplit.value = percentage; if(mapInstance.value) mapInstance.value.invalidateSize(); };
                 const stopResize = () => { isResizing.value = false; window.removeEventListener('mousemove', onResize); window.removeEventListener('touchmove', onResize); window.removeEventListener('mouseup', stopResize); window.removeEventListener('touchend', stopResize); if(mapInstance.value) mapInstance.value.invalidateSize(); };
                 const fetchWeather = async () => { try { const lat = 35.0116, lon = 135.7681; const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode&current_weather=true&timezone=Asia%2FTokyo&forecast_days=14`); const data = await response.json(); weatherData.value = data; } catch (e) { console.error("Weather fetch failed", e); } };
-                
-                // --- FIXED: Map Initialization Logic ---
-                const initMap = async () => {
+                const initMap = async (force = false) => {
                     await nextTick();
                     const container = document.getElementById('map');
                     if (!container) return;
-
-                    // Always destroy the old map instance because v-if destroys the DOM element
-                    if (mapInstance.value) { 
-                        mapInstance.value.remove();
-                        mapInstance.value = null;
-                    }
-
-                    // Create new map
+                    if (mapInstance.value) { if (!force) return; mapInstance.value.remove(); }
                     mapInstance.value = L.map('map').setView([35.0116, 135.7681], 13);
-                    
                     let tileUrl = theme.value === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
                     L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20 }).addTo(mapInstance.value);
-                    
-                    // Create a layer group to handle markers (easy clearing)
-                    markersLayer.value = L.layerGroup().addTo(mapInstance.value);
-
                     updateMapMarkers();
                 };
-
                 const updateMapMarkers = () => {
-                    if (!mapInstance.value || !markersLayer.value) return;
-                    
-                    // Clear old markers first
-                    markersLayer.value.clearLayers();
-                    
+                    if (!mapInstance.value) return;
+                    markers.value = []; 
                     const events = currentDayEvents.value;
-                    const group = L.featureGroup(); // Used only for calculating bounds
-
-                    events.forEach(e => {
+                    const group = new L.FeatureGroup();
+                    events.forEach((e, index) => { // Use index for marker label
                         if (e.lat && e.lng) {
                             const pinBg = theme.value === 'dark' ? '#fbbf24' : '#433D3C';
                             const pinText = theme.value === 'dark' ? '#000' : '#fff';
-                            const iconHtml = `<div style="background-color: ${pinBg}; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: ${pinText}; font-size: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor: pointer;">${e.id}</div>`;
+                            // Use index + 1 for the label
+                            const iconHtml = `<div style="background-color: ${pinBg}; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: ${pinText}; font-size: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor: pointer;">${index + 1}</div>`;
                             const customIcon = L.divIcon({ className: 'custom-pin', html: iconHtml, iconSize: [24, 24], iconAnchor: [12, 12] });
-                            
-                            const marker = L.marker([e.lat, e.lng], { icon: customIcon });
+                            const marker = L.marker([e.lat, e.lng], { icon: customIcon }).addTo(mapInstance.value);
                             marker.on('click', () => { window.open(`https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}`, '_blank'); });
-                            
-                            // Add to the LayerGroup (for display) and FeatureGroup (for bounds)
-                            markersLayer.value.addLayer(marker);
                             group.addLayer(marker);
                         }
                     });
-
-                    // Fit bounds if there are markers
-                    if (events.filter(e => e.lat).length > 0) {
-                        mapInstance.value.fitBounds(group.getBounds().pad(0.1));
-                    }
+                    if (events.filter(e => e.lat).length > 0) mapInstance.value.fitBounds(group.getBounds().pad(0.1));
                 };
                 
-                // Watchers
                 watch(activeTab, (newTab) => { 
-                    if (newTab === 'map') {
-                        // Small timeout to ensure transition animation allows DOM to paint
-                        setTimeout(() => { 
-                            initMap(); 
-                            if(mapInstance.value) mapInstance.value.invalidateSize(); 
-                        }, 100); 
-                    }
+                    if (newTab === 'map') setTimeout(() => { initMap(); if(mapInstance.value) mapInstance.value.invalidateSize(); updateMapMarkers(); }, 100); 
                 });
-                
-                watch(currentDayIndex, () => { 
-                    if (activeTab.value === 'map') updateMapMarkers(); 
-                });
-
+                watch(currentDayIndex, () => { if (activeTab.value === 'map') updateMapMarkers(); });
                 const locateUser = () => { if (!navigator.geolocation) return alert("Geolocation not supported"); navigator.geolocation.getCurrentPosition((pos) => { const lat = pos.coords.latitude, lng = pos.coords.longitude; if (userMarker.value) mapInstance.value.removeLayer(userMarker.value); const pulseIcon = L.divIcon({ className: 'user-location-marker', iconSize: [20, 20] }); userMarker.value = L.marker([lat, lng], { icon: pulseIcon }).addTo(mapInstance.value); mapInstance.value.flyTo([lat, lng], 15); }, () => { alert("Unable to retrieve location"); }); };
                 const flyToLocation = (loc) => { if (mapInstance.value && loc.lat && loc.lng) mapInstance.value.flyTo([loc.lat, loc.lng], 16); };
                 const openGoogleMaps = (locationName) => { window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationName + ' 京都')}`, '_blank'); };
@@ -787,38 +778,28 @@
                 const removeTraveler = (idx) => travelers.value.splice(idx, 1);
                 const triggerReset = () => { showConfirm('Reset all app data?', () => { localStorage.clear(); window.location.reload(); }); };
                 const resetAllData = () => triggerReset();
+                
+                // --- Date Delete Logic ---
+                const triggerDeleteDay = (index) => {
+                    if (days.value.length <= 1) {
+                         // Don't delete the last day to keep app functional
+                         return;
+                    }
+                    showConfirm(`Delete Day ${index + 1}?`, () => {
+                        days.value.splice(index, 1);
+                        // Adjust current index if needed
+                        if (currentDayIndex.value >= days.value.length) {
+                            currentDayIndex.value = Math.max(0, days.value.length - 1);
+                        }
+                    });
+                };
 
-                // --- CRITICAL FIX: Trigger these on mount ---
                 onMounted(() => {
-                    fetchWeather();
-                    initSync();
-                    
-                    // --- Auto-generate Apple Touch Icon ---
-                    // Generates a 180x180 PNG with cream background and red torii emoji
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 180;
-                    canvas.height = 180;
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Background Color (#FDFBF7)
-                    ctx.fillStyle = '#FDFBF7';
-                    ctx.fillRect(0, 0, 180, 180);
-                    
-                    // Emoji text (#CB7E76 is close to Torii red, but emojis have their own colors)
-                    // We rely on the system emoji font which is usually colored.
-                    ctx.font = '140px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('⛩️', 90, 95); 
-                    
-                    // Inject into the link tag
-                    const iconUrl = canvas.toDataURL('image/png');
-                    const link = document.getElementById('app-icon');
-                    if(link) link.href = iconUrl;
+                    initSync(); // Start sync on mount
                 });
 
                 return {
-                    activeTab, days, currentDayIndex, currentDayEvents, travelers, expenses, sortedExpenses, totalExpense, debts, showEventModal, showExpenseModal, showSettings, eventForm, expenseForm, isEditing, mapLocations, confirmState, weatherData, currentKyotoWeather, getEventWeather, getWeatherIcon, isUrl, getDayName, formatDateShort, getCategoryColor, getCategoryIcon, getPaidAmount, getTabTitle, addDay, openAddModal, editEvent, saveEvent, deleteEvent, triggerDeleteEvent, closeEventModal, saveExpense, triggerDeleteExpense, clearExpenses, addTraveler, removeTraveler, triggerReset, resetAllData, executeConfirm, exchangeRate, expenseCurrency, locateUser, flyToLocation, openGoogleMaps, mapSplit, startResize, autoFillFlight, flightExpanded, toggleFlight, expenseCategories, getExpenseCategoryIcon, getExpenseCategoryColor, theme, changeTheme, isOnline, isSyncing, errorMessage
+                    activeTab, days, currentDayIndex, currentDayEvents, travelers, expenses, sortedExpenses, totalExpense, debts, showEventModal, showExpenseModal, showSettings, eventForm, expenseForm, isEditing, mapLocations, confirmState, weatherData, currentKyotoWeather, getEventWeather, getWeatherIcon, isUrl, getDayName, formatDateShort, getCategoryColor, getCategoryIcon, getPaidAmount, getTabTitle, addDay, openAddModal, editEvent, saveEvent, deleteEvent, triggerDeleteEvent, closeEventModal, saveExpense, triggerDeleteExpense, clearExpenses, addTraveler, removeTraveler, triggerReset, resetAllData, executeConfirm, exchangeRate, expenseCurrency, locateUser, flyToLocation, openGoogleMaps, mapSplit, startResize, autoFillFlight, flightExpanded, toggleFlight, expenseCategories, getExpenseCategoryIcon, getExpenseCategoryColor, theme, changeTheme, isOnline, isSyncing, errorMessage, triggerDeleteDay, marked
                 };
             }
         }).mount('#app');
