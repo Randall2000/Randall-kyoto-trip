@@ -634,7 +634,7 @@
                             { id: 8, time: '17:30', title: 'JR 東海京都站', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' }
                         ] 
                     },
-                    // DAY 3: 12/13
+                    // DAY 3: 12/13 (Restored)
                     { 
                         date: getFixedDate(2), 
                         flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(2), arrivalTime: '' }, 
@@ -660,7 +660,7 @@
                     // DAY 5: 12/15
                     { 
                         date: getFixedDate(4), 
-                        flight: { number: '', time: '', from: 'KIX', to: 'TPE', arrivalDate: getFixedDate(4), arrivalTime: '' }, 
+                        flight: { number: '', time: '', from: '', to: '', arrivalDate: getFixedDate(4), arrivalTime: '' }, 
                         events: [ 
                             { id: 16, time: '09:00', title: '京都車站 Kyoto Station', location: 'Kyoto Station', lat: 34.9858, lng: 135.7588, category: 'transport', note: '' },
                             { id: 17, time: '10:30', title: '關西國際機場 KIX', location: 'Kansai International Airport', lat: 34.4347, lng: 135.2442, category: 'transport', note: '' }
@@ -673,10 +673,10 @@
                     return day ? day.events.sort((a, b) => a.time.localeCompare(b.time)) : []; 
                 });
 
-                // Use v2025_final to force refresh for new itinerary
-                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v2025_final')) || defaultTravelers);
-                const days = ref(JSON.parse(localStorage.getItem('jp_days_v2025_final')) || defaultDays);
-                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v2025_final')) || []);
+                // Use a NEW key to force data restore (v2025_restore_1213)
+                const travelers = ref(JSON.parse(localStorage.getItem('jp_travelers_v2025_restore_1213')) || defaultTravelers);
+                const days = ref(JSON.parse(localStorage.getItem('jp_days_v2025_restore_1213')) || defaultDays);
+                const expenses = ref(JSON.parse(localStorage.getItem('jp_expenses_v2025_restore_1213')) || []);
 
                 const eventForm = ref({ id: null, title: '', time: '', location: '', lat: null, lng: null, category: 'sightseeing', note: '' });
                 const expenseForm = ref({ id: null, amount: '', title: '', payer: travelers.value[0], date: '', category: 'food' });
@@ -685,7 +685,7 @@
                 const expenseCategories = [ { id: 'food', label: 'Food', icon: 'fa-utensils', color: 'bg-orange-100 text-orange-500' }, { id: 'transport', label: 'Transport', icon: 'fa-train-subway', color: 'bg-blue-100 text-blue-500' }, { id: 'shopping', label: 'Shopping', icon: 'fa-bag-shopping', color: 'bg-purple-100 text-purple-500' }, { id: 'sightseeing', label: 'Sightseeing', icon: 'fa-camera', color: 'bg-red-100 text-red-500' }, { id: 'stay', label: 'Stay', icon: 'fa-bed', color: 'bg-indigo-100 text-indigo-500' }, { id: 'other', label: 'Other', icon: 'fa-receipt', color: 'bg-gray-100 text-gray-500' } ];
 
                 // Changed document ID to force a fresh start with new data
-                const tripDocRef = doc(db, 'trips', 'shared_trip_randall_final_v2025_final');
+                const tripDocRef = doc(db, 'trips', 'shared_trip_restore_1213');
 
                 const initSync = async () => {
                     try {
@@ -784,9 +784,9 @@
                             if(!day.flight.from) day.flight.from = 'TPE'; 
                             if(!day.flight.to) day.flight.to = 'KIX'; 
                         } else if (dayIndex === days.value.length - 1) { 
-                            // SWAPPED BACK LOGIC FOR LAST DAY: KIX -> TPE
-                            if(!day.flight.from) day.flight.from = 'KIX'; 
-                            if(!day.flight.to) day.flight.to = 'TPE'; 
+                            // SWAPPED LOGIC FOR LAST DAY: TPE -> KIX
+                            if(!day.flight.from) day.flight.from = 'TPE'; 
+                            if(!day.flight.to) day.flight.to = 'KIX'; 
                         } 
                     }
                 };
