@@ -759,16 +759,10 @@
                 const getEventWeather = (timeStr) => { 
                     if (!weatherData.value || !timeStr) return null; 
                     
-                    // Map itinerary day index (0, 1, 2...) to API forecast days starting from "Tomorrow" (index 1)
-                    // Assumption: Day 0 (12/11) matches API Day 1 (Tomorrow, if today is 12/10)
-                    // Simplified: We map Itinerary Day 0 -> API Day 1 to ensure visibility for "Tomorrow's trip"
-                    // If user is testing on same day, use 0. Let's use `currentDayIndex.value + 1` for 12/11
-                    
-                    // Safe mapping: Itinerary Day Index -> API Day Index
                     const apiDayIndex = currentDayIndex.value + 1; 
                     const hour = parseInt(timeStr.split(':')[0]);
                     
-                    if(apiDayIndex >= 14) return null; // Out of range
+                    if(apiDayIndex >= 14) return null; 
 
                     const dataIndex = (apiDayIndex * 24) + hour;
                     
@@ -789,7 +783,18 @@
                     } 
                 });
                 
-                const getWeatherIcon = (code) => { if (code === 0) return 'fa-solid fa-sun text-orange-400'; if (code >= 1 && code <= 3) return 'fa-solid fa-cloud-sun text-yellow-500'; if (code >= 45) return 'fa-solid fa-smog text-gray-400'; if (code >= 51 && code <= 67) return 'fa-solid fa-cloud-rain text-blue-400'; if (code >= 80) return 'fa-solid fa-cloud-showers-heavy text-blue-500'; return 'fa-solid fa-cloud text-gray-400'; };
+                const getWeatherIcon = (code) => { 
+                    if (code === 0) return 'fa-solid fa-sun text-orange-400';
+                    if (code >= 1 && code <= 3) return 'fa-solid fa-cloud-sun text-yellow-500';
+                    if (code >= 45 && code <= 48) return 'fa-solid fa-smog text-gray-400';
+                    if (code >= 51 && code <= 67) return 'fa-solid fa-cloud-rain text-blue-400';
+                    if (code >= 71 && code <= 77) return 'fa-regular fa-snowflake text-blue-200';
+                    if (code >= 80 && code <= 82) return 'fa-solid fa-cloud-showers-heavy text-blue-500';
+                    if (code >= 85 && code <= 86) return 'fa-regular fa-snowflake text-blue-300';
+                    if (code >= 95) return 'fa-solid fa-bolt text-yellow-500';
+                    return 'fa-solid fa-cloud text-gray-400';
+                };
+                
                 const initMap = async (force = false) => {
                     await nextTick();
                     const container = document.getElementById('map');
